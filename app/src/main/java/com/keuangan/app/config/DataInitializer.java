@@ -21,23 +21,25 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) {
+public void run(String... args) {
 
-        if (userRepository.count() == 0) {
+    System.out.println("DataInitializer dijalankan");
 
-            User admin = new User();
+    if (userRepository.count() == 0) {
 
-            admin.setUsername("admin");
-            admin.setEmail("admin@financebuddy.com");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setNamaLengkap("Administrator");
+        User admin = new User();
 
-            admin.setRole(UserRole.ADMIN);
-            admin.setStatus(UserStatus.TERVALIDASI);
+        admin.setUsername("admin");
+        admin.setEmail("admin@financebuddy.com");
+        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setNamaLengkap("Administrator");
+        admin.setRole(UserRole.ADMIN);
+        admin.setStatus(UserStatus.TERVALIDASI);
 
-            userRepository.save(admin);
+        userRepository.save(admin);
 
-            System.out.println("Admin default berhasil dibuat.");
-        }
+        System.out.println("Admin default berhasil dibuat.");
+        System.out.println("Jumlah user = " + userRepository.count());
     }
+}
 }
