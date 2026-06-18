@@ -30,8 +30,10 @@ public class ExpenseService {
         categoryRepository.findByNameIgnoreCaseAndType(request.getCategory(), "EXPENSE")
                 .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getCategory() + "' tidak valid untuk pengeluaran"));
 
-        // 3. Simulasi Cek Batas Saldo (Skenario Alternatif Use Case 006)
-        BigDecimal currentBalance = new BigDecimal("150000"); // Contoh limit saldo tiruan
+        // OPTIMASI: Mengambil saldo langsung via agregasi database untuk menghindari OutOfMemory (OOM) pada skala data besar
+        BigDecimal currentBalance = transactionRepository.getRealtimeBalance(request.getUserId());
+
+        // 3. Pengecekan Batas Saldo Minus
         if (currentBalance.compareTo(request.getAmount()) < 0 && !request.isForceSave()) {
             throw new IllegalStateException("WARNING_INSUFFICIENT_BALANCE");
         }
