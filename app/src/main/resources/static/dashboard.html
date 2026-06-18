@@ -94,40 +94,9 @@
             }
         }
     </script>
-    <style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .ambient-shadow-sm {
-            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.04);
-        }
-        .card-outline {
-            border: 1px solid #F0F0F0;
-        }
-        .glass-blur {
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        
-        /* Animasi Dashboard Bawaan */
-        @keyframes growUp {
-            from { transform: scaleY(0); }
-            to { transform: scaleY(1); }
-        }
-        .bar-grow {
-            transform-origin: bottom;
-            animation: growUp 1s ease-out forwards;
-        }
-        @keyframes strokeDraw {
-            to { stroke-dashoffset: 0; }
-        }
-        .donut-segment {
-            stroke-dasharray: 100 100;
-            stroke-dashoffset: 100;
-            animation: strokeDraw 1.5s ease-out forwards;
-        }
-    </style>
+    <link rel="stylesheet" href="css/component.css">
 </head>
+
 <body class="bg-background text-on-background font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container">
 
 <div class="relative flex h-auto min-h-screen w-full flex-col lg:flex-row overflow-x-hidden">
