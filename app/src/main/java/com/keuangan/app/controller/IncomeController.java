@@ -19,7 +19,7 @@ import com.keuangan.app.dto.IncomeRequest;
 import com.keuangan.app.service.IncomeService;
 
 @RestController
-@RequestMapping("/api/incomes")
+@RequestMapping("/api/transaksi/pemasukan")
 @CrossOrigin(origins = "*")
 public class IncomeController {
 
