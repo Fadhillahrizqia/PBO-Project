@@ -48,10 +48,4 @@ public class AuthController {
             .role(role)
             .build());
     }
-
-    @GetMapping("/hash/{raw}")
-public ResponseEntity<String> generateHash(@PathVariable String raw) {
-    String hash = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode(raw);
-    return ResponseEntity.ok(hash);
-}
 }
