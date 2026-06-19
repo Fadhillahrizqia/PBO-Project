@@ -48,7 +48,7 @@ public class ReportController {
             @RequestParam(value = "tahun", required = false, defaultValue = "2026") Integer tahun) {
             
         String userId = authentication.getName();
-        List<YearlyChartDTO> yearlyData = reportService.getYearlyChart(userId);
+        List<YearlyChartDTO> yearlyData = reportService.getYearlyChart(userId, tahun); 
         return ResponseEntity.ok(yearlyData);
-    }               
+    }
 }

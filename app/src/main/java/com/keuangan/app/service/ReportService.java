@@ -20,14 +20,12 @@ public class ReportService {
     }
 
     public DashboardResponseDTO getDashboardSummary(String userId) {
-
         List<Transaction> transactions = transactionRepository.findByUserId(userId);
 
         BigDecimal totalIncome = BigDecimal.ZERO;
         BigDecimal totalExpense = BigDecimal.ZERO;
 
         for (Transaction t : transactions) {
-
             if ("INCOME".equalsIgnoreCase(t.getType())) {
                 totalIncome = totalIncome.add(t.getAmount());
             }
@@ -45,72 +43,67 @@ public class ReportService {
                 saldo
         );
     }
+
     public List<MonthlyChartDTO> getMonthlyChart(String userId, Integer year) {
+        List<Object[]> results = transactionRepository.getMonthlySummary(userId, year);
+        List<MonthlyChartDTO> charts = new ArrayList<>();
 
-    List<Object[]> results = transactionRepository.getMonthlySummary(userId, year);
+        for (Object[] row : results) {
+            Integer monthNumber = (Integer) row[0];
+            String type = (String) row[1];
+            BigDecimal amount = (BigDecimal) row[2];
 
-    List<MonthlyChartDTO> charts = new ArrayList<>();
+            String month = String.valueOf(monthNumber);
 
-    for (Object[] row : results) {
+            MonthlyChartDTO dto = charts.stream()
+                    .filter(c -> c.getMonth().equals(month))
+                    .findFirst()
+                    .orElse(null);
 
-        Integer monthNumber = (Integer) row[0];
-        String type = (String) row[1];
-        BigDecimal amount = (BigDecimal) row[2];
+            if (dto == null) {
+                dto = new MonthlyChartDTO(month, 0, 0);
+                charts.add(dto);
+            }
 
-        String month = String.valueOf(monthNumber);
+            if ("INCOME".equalsIgnoreCase(type)) {
+                dto.setIncome(amount.doubleValue());
+            }
 
-        MonthlyChartDTO dto = charts.stream()
-                .filter(c -> c.getMonth().equals(month))
-                .findFirst()
-                .orElse(null);
-
-        if (dto == null) {
-            dto = new MonthlyChartDTO(month, 0, 0);
-            charts.add(dto);
+            if ("EXPENSE".equalsIgnoreCase(type)) {
+                dto.setExpense(amount.doubleValue());
+            }
         }
-
-        if ("INCOME".equalsIgnoreCase(type)) {
-            dto.setIncome(amount.doubleValue());
-        }
-
-        if ("EXPENSE".equalsIgnoreCase(type)) {
-            dto.setExpense(amount.doubleValue());
-        }
-    }
-     return charts;
+        return charts;
     }
 
-    public List<YearlyChartDTO> getYearlyChart(String userId) {
+    public List<YearlyChartDTO> getYearlyChart(String userId, Integer yearParam) {
+        List<Object[]> results = transactionRepository.getYearlySummary(userId);
+        List<YearlyChartDTO> charts = new ArrayList<>();
 
-    List<Object[]> results = transactionRepository.getYearlySummary(userId);
+        for (Object[] row : results) {
+            Integer year = (Integer) row[0];
+            String type = (String) row[1];
+            BigDecimal amount = (BigDecimal) row[2];
 
-    List<YearlyChartDTO> charts = new ArrayList<>();
+            YearlyChartDTO dto = charts.stream()
+                    .filter(c -> c.getYear().equals(year))
+                    .findFirst()
+                    .orElse(null);
 
-    for (Object[] row : results) {
+            if (dto == null) {
+                dto = new YearlyChartDTO(year, 0, 0);
+                charts.add(dto);
+            }
 
-        Integer year = (Integer) row[0];
-        String type = (String) row[1];
-        BigDecimal amount = (BigDecimal) row[2];
+            if ("INCOME".equalsIgnoreCase(type)) {
+                dto.setIncome(amount.doubleValue());
+            }
 
-        YearlyChartDTO dto = charts.stream()
-                .filter(c -> c.getYear().equals(year))
-                .findFirst()
-                .orElse(null);
-
-        if (dto == null) {
-            dto = new YearlyChartDTO(year, 0, 0);
-            charts.add(dto);
+            if ("EXPENSE".equalsIgnoreCase(type)) {
+                dto.setExpense(amount.doubleValue());
+            }
         }
 
-        if ("INCOME".equalsIgnoreCase(type)) {
-            dto.setIncome(amount.doubleValue());
-        }
-
-        if ("EXPENSE".equalsIgnoreCase(type)) {
-            dto.setExpense(amount.doubleValue());
-        }
+        return charts;
     }
-
-    return charts;
 }
-  }
