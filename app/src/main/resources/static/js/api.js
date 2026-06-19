@@ -14,7 +14,7 @@
 
 // ─── Konfigurasi ────────────────────────────────────────────────────────────
 
-const BASE_URL = "/api"; // sesuaikan jika backend jalan di port berbeda
+const BASE_URL = "https://pbo-project-production.up.railway.app/api";
 
 // ─── Helper internal ─────────────────────────────────────────────────────────
 
@@ -23,7 +23,7 @@ const BASE_URL = "/api"; // sesuaikan jika backend jalan di port berbeda
  * @returns {string|null}
  */
 function getToken() {
-  return sessionStorage.getItem("jwt_token");
+  return localStorage.getItem("token"); // Diubah dari sessionStorage
 }
 
 /**
@@ -31,14 +31,14 @@ function getToken() {
  * @param {string} token
  */
 function saveToken(token) {
-  sessionStorage.setItem("jwt_token", token);
+  localStorage.setItem("token", token); // Diubah dari sessionStorage
 }
 
 /**
  * Menghapus token JWT (logout).
  */
 function clearToken() {
-  sessionStorage.removeItem("jwt_token");
+  localStorage.removeItem("token"); // Diubah dari sessionStorage
 }
 
 /**
