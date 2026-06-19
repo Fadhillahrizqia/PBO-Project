@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", function () {
             try {
                 // Tampilkan status loading agar tombol tidak bisa di-klik berkali-kali
                 const submitBtn = loginForm.querySelector('button[type="submit"]');
-                const originalText = submitBtn ? submitBtn.innerHTML : "Masuk";
                 
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -36,6 +35,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 // Panggil fungsi login dari api.js ke Spring Boot
                 const response = await login(username, password);
+
+                // ========================================================
+                // BARIS KRUSIAL: Simpan token keamanan ke Local Storage!
+                // Jika struktur respons API tim kamu adalah { token: "..." }
+                // ========================================================
+                if (response && response.token) {
+                    localStorage.setItem('token', response.token);
+                } else if (response && response.data && response.data.token) {
+                    // Cadangan jika token dibungkus di dalam objek 'data'
+                    localStorage.setItem('token', response.data.token);
+                }
 
                 alert("Login Berhasil!");
                 
@@ -69,7 +79,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 e.preventDefault();
                 const confirmLogout = confirm("Apakah Anda yakin ingin keluar?");
                 if (confirmLogout) {
-                    logout(); // Memanggil fungsi logout dari api.js yang akan menghapus token
+                    // Hapus token lokal terlebih dahulu sebelum memanggil logout API
+                    localStorage.removeItem('token');
+                    sessionStorage.clear();
+                    logout(); // Memanggil fungsi logout dari api.js
                 }
             });
         }
