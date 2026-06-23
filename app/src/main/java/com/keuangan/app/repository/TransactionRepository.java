@@ -12,9 +12,8 @@ import java.util.List;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
-    // Query untuk menghitung total pemasukan dikurangi total pengeluaran langsung di database
     @Query("""
-        SELECT COALESCE(SUM(CASE WHEN t.type = 'INCOME' THEN t.amount ELSE -t.amount END), 0)
+        SELECT COALESCE(SUM(CASE WHEN t.type = 'INCOME' THEN t.nominal ELSE -t.nominal END), 0)
         FROM Transaction t
         WHERE t.userId = :userId
     """)
@@ -23,20 +22,20 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByUserId(String userId);
 
     @Query("""
-        SELECT MONTH(t.date), t.type, SUM(t.amount)
+        SELECT MONTH(t.tanggal), t.type, SUM(t.nominal)
         FROM Transaction t
-        WHERE t.userId = :userId AND YEAR(t.date) = :year
-        GROUP BY MONTH(t.date), t.type
-        ORDER BY MONTH(t.date)
+        WHERE t.userId = :userId AND YEAR(t.tanggal) = :year
+        GROUP BY MONTH(t.tanggal), t.type
+        ORDER BY MONTH(t.tanggal)
     """)
     List<Object[]> getMonthlySummary(@Param("userId") String userId, @Param("year") Integer year);
 
     @Query("""
-        SELECT YEAR(t.date), t.type, SUM(t.amount)
+        SELECT YEAR(t.tanggal), t.type, SUM(t.nominal)
         FROM Transaction t
         WHERE t.userId = :userId
-        GROUP BY YEAR(t.date), t.type
-        ORDER BY YEAR(t.date)
+        GROUP BY YEAR(t.tanggal), t.type
+        ORDER BY YEAR(t.tanggal)
     """)
     List<Object[]> getYearlySummary(@Param("userId") String userId);
 }
