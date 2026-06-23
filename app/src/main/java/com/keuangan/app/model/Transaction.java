@@ -1,8 +1,14 @@
 package com.keuangan.app.model;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "transactions")
@@ -36,18 +42,26 @@ public class Transaction {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    
     public String getUserId() { return userId; }
     public void setUserId(String userId) { this.userId = userId; }
+    
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
-    public BigDecimal getAmount() { return amount; }
-    public void setAmount(BigDecimal amount) { this.amount = amount; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public LocalDate getDate() { return date; }
-    public void setDate(LocalDate date) { this.date = date; }
+    
+    // Perubahan nama Getter & Setter ke Bahasa Indonesia
+    public String getKategori() { return category; }
+    public void setKategori(String kategori) { this.category = kategori; }
+    
+    public BigDecimal getNominal() { return amount; }
+    public void setNominal(BigDecimal nominal) { this.amount = nominal; }
+    
+    public String getKeterangan() { return description; }
+    public void setKeterangan(String keterangan) { this.description = keterangan; }
+    
+    public LocalDate getTanggal() { return date; }
+    public void setTanggal(LocalDate tanggal) { this.date = tanggal; }
+    
     public String getAkun() { return akun; }
     public void setAkun(String akun) { this.akun = akun; }
 }

@@ -40,14 +40,14 @@ public class IncomeService {
         categoryRepository.findByNameIgnoreCaseAndType(request.getKategori(), "INCOME")
                 .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pemasukan"));
 
-        // 3. Mapping ke Entity Transaction
+        // 3. Mapping ke Entity Transaction (Sekarang menggunakan setter Bahasa Indonesia)
         Transaction t = new Transaction();
         t.setUserId(userId);
         t.setType("INCOME");
-        t.setCategory(request.getKategori());
-        t.setAmount(request.getNominal());
-        t.setDescription(request.getKeterangan());
-        t.setDate(request.getTanggal());
+        t.setKategori(request.getKategori());
+        t.setNominal(request.getNominal());
+        t.setKeterangan(request.getKeterangan());
+        t.setTanggal(request.getTanggal());
         t.setAkun(request.getAkun());
 
         transactionRepository.save(t);
@@ -73,11 +73,11 @@ public class IncomeService {
         categoryRepository.findByNameIgnoreCaseAndType(request.getKategori(), "INCOME")
                 .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pemasukan"));
 
-        // Update data
-        t.setAmount(request.getNominal());
-        t.setCategory(request.getKategori());
-        t.setDescription(request.getKeterangan());
-        t.setDate(request.getTanggal());
+        // Update data (Sekarang menggunakan setter Bahasa Indonesia)
+        t.setNominal(request.getNominal());
+        t.setKategori(request.getKategori());
+        t.setKeterangan(request.getKeterangan());
+        t.setTanggal(request.getTanggal());
         t.setAkun(request.getAkun());
 
         return transactionRepository.save(t);

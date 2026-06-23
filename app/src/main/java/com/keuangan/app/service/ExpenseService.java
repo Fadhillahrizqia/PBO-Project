@@ -52,14 +52,14 @@ public class ExpenseService {
             throw new IllegalStateException("WARNING_INSUFFICIENT_BALANCE");
         }
 
-        // 4. Eksekusi Simpan
+        // 4. Eksekusi Simpan (Sekarang menggunakan setter Bahasa Indonesia)
         Transaction t = new Transaction();
         t.setUserId(userId);
         t.setType("EXPENSE");
-        t.setCategory(request.getKategori());
-        t.setAmount(request.getNominal());
-        t.setDescription(request.getKeterangan());
-        t.setDate(request.getTanggal());
+        t.setKategori(request.getKategori());
+        t.setNominal(request.getNominal());
+        t.setKeterangan(request.getKeterangan());
+        t.setTanggal(request.getTanggal());
         t.setAkun(request.getAkun());
 
         transactionRepository.save(t);
@@ -89,10 +89,11 @@ public class ExpenseService {
             throw new IllegalStateException("WARNING_INSUFFICIENT_BALANCE");
         }
 
-        t.setAmount(request.getNominal());
-        t.setCategory(request.getKategori());
-        t.setDescription(request.getKeterangan());
-        t.setDate(request.getTanggal());
+        // Update data (Sekarang menggunakan setter Bahasa Indonesia)
+        t.setNominal(request.getNominal());
+        t.setKategori(request.getKategori());
+        t.setKeterangan(request.getKeterangan());
+        t.setTanggal(request.getTanggal());
         t.setAkun(request.getAkun());
 
         return transactionRepository.save(t);
