@@ -2,6 +2,7 @@ package com.keuangan.app.service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,8 +24,10 @@ public class ExpenseService {
     private CategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
-    public List<Transaction> getAllTransactions(String userId) {
-        return transactionRepository.findByUserId(userId);
+    public List<Transaction> getAllExpenses(String userId) {
+        return transactionRepository.findByUserId(userId).stream()
+                .filter(t -> "EXPENSE".equalsIgnoreCase(t.getType()))
+                .collect(Collectors.toList());
     }
 
     public String createExpense(ExpenseRequest request, String userId) {

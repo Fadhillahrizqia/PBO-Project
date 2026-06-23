@@ -1,6 +1,8 @@
 package com.keuangan.app.service;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,13 @@ public class IncomeService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Transactional(readOnly = true)
+    public List<Transaction> getAllIncomes(String userId) {
+        return transactionRepository.findByUserId(userId).stream()
+                .filter(t -> "INCOME".equalsIgnoreCase(t.getType()))
+                .collect(Collectors.toList());
+    }
 
     public String saveIncome(IncomeRequest request, String userId) {
         // 1. Validasi Angka (Menggunakan getNominal)
