@@ -1,13 +1,13 @@
 package com.keuangan.app.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public class IncomeRequest {
     private BigDecimal nominal;
     private String kategori;
     private String keterangan;
-    private LocalDate tanggal;
+    private LocalDateTime tanggal;
     private String akun;   // (Gopay, Ovo, BCA, dll)
 
     public IncomeRequest() {}
@@ -22,8 +22,8 @@ public class IncomeRequest {
     public String getKeterangan() { return keterangan; }
     public void setKeterangan(String keterangan) { this.keterangan = keterangan; }
 
-    public LocalDate getTanggal() { return tanggal; }
-    public void setTanggal(LocalDate tanggal) { this.tanggal = tanggal; }
+    public LocalDateTime getTanggal() { return tanggal; }
+    public void setTanggal(LocalDateTime tanggal) { this.tanggal = tanggal; }
 
     public String getAkun() { return akun; }
     public void setAkun(String akun) { this.akun = akun; }

@@ -60,8 +60,13 @@ public class ExpenseService {
         t.setKategori(request.getKategori());
         t.setNominal(request.getNominal());
         t.setKeterangan(request.getKeterangan());
-        t.setTanggal(LocalDateTime.now());
         t.setAkun(request.getAkun());
+
+        if (request.getTanggal() != null) {
+            t.setTanggal(request.getTanggal());
+        } else {
+            t.setTanggal(LocalDateTime.now());
+        }
 
         transactionRepository.save(t);
         return "Pengeluaran berhasil dicatat" + (currentBalance.compareTo(request.getNominal()) < 0 ? " (Saldo Anda Minus!)" : "");
@@ -94,8 +99,13 @@ public class ExpenseService {
         t.setNominal(request.getNominal());
         t.setKategori(request.getKategori());
         t.setKeterangan(request.getKeterangan());
-        t.setTanggal(LocalDateTime.now());
         t.setAkun(request.getAkun());
+
+        if (request.getTanggal() != null) {
+            t.setTanggal(request.getTanggal());
+        } else {
+            t.setTanggal(LocalDateTime.now());
+        }
 
         return transactionRepository.save(t);
     }

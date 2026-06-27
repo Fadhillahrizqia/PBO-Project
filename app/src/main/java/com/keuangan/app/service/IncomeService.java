@@ -48,8 +48,13 @@ public class IncomeService {
         t.setKategori(request.getKategori());
         t.setNominal(request.getNominal());
         t.setKeterangan(request.getKeterangan());
-        t.setTanggal(LocalDateTime.now());
         t.setAkun(request.getAkun());
+
+        if (request.getTanggal() != null) {
+            t.setTanggal(request.getTanggal());
+        } else {
+            t.setTanggal(LocalDateTime.now());
+        }
 
         transactionRepository.save(t);
         
@@ -78,8 +83,13 @@ public class IncomeService {
         t.setNominal(request.getNominal());
         t.setKategori(request.getKategori());
         t.setKeterangan(request.getKeterangan());
-        t.setTanggal(LocalDateTime.now());
         t.setAkun(request.getAkun());
+
+        if (request.getTanggal() != null) {
+            t.setTanggal(request.getTanggal());
+        } else {
+            t.setTanggal(LocalDateTime.now());
+        }
 
         return transactionRepository.save(t);
     }

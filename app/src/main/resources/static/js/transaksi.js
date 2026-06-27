@@ -1,3 +1,7 @@
+/**
+ * File: js/transaksi.js
+ * 💡 FITUR BARU: Mendukung input Kalender Kustom (Bisa Backdate/Tanggal Mundur)
+ */
 import {
   tambahPemasukan,
   getRiwayatPemasukan,
@@ -8,7 +12,6 @@ import {
   logout,
 } from "./api.js";
 
-// Proteksi halaman login
 requireAuth();
 
 let lineChartInst = null;
@@ -23,10 +26,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   const selectKategori = document.getElementById("kategori");
   const selectAkun = document.getElementById("akun");
   const inputDeskripsi = document.getElementById("deskripsi");
+
+  // 💡 Elemen Kalender Baru
+  const inputTanggal = document.getElementById("tanggalTransaksi");
+
   const btnSimpan = document.getElementById("btnSimpan");
   const btnLogout = document.getElementById("btnLogout");
 
-  // 💡 FIX PREFIX: Membaca properti pData.data.email sesuai struktur ApiResponse Spring Boot kelompokmu
+  // Set Default Kalender ke Hari Ini secara otomatis saat web diload
+  if (inputTanggal) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    inputTanggal.value = `${yyyy}-${mm}-${dd}`;
+  }
+
   let userPrefix = "guest";
   try {
     const pData = await getProfil();
@@ -37,7 +52,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error(e);
   }
 
-  // Sinkronisasi Pilihan Akun Aktif dari Dashboard lokal memori per user session
   if (selectAkun) {
     const defaultAkun = ["BCA", "MANDIRI", "GOPAY", "DANA", "CASH"];
     const listAkunAktif = JSON.parse(
@@ -139,12 +153,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           document.getElementById("txtRataRataPemasukan").innerText =
             formatRupiah(Math.round(akumulasiTotal / 30));
 
-        // 💡 FIX SINKRONISASI: Cek key userPrefix dulu, kalau belum ke-load jalankan key global backup
         const targetTabungan =
           parseInt(localStorage.getItem(`${userPrefix}_target_tabungan`), 10) ||
           parseInt(localStorage.getItem("fb_current_target_tabungan"), 10) ||
           500000;
-
         const elTargetVal = document.getElementById("lblTargetValue");
         const elTargetPct = document.getElementById("lblTargetPercent");
         const elTargetBar = document.getElementById("barTargetProgress");
@@ -178,7 +190,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const elBar = document.getElementById("barBudget");
         const txtPct = document.getElementById("txtBudgetPercent");
 
-        // 💡 FIX SINKRONISASI: Cek key userPrefix dulu, kalau belum ke-load jalankan key global backup
         const limitAnggaran =
           parseInt(localStorage.getItem(`${userPrefix}_limit_anggaran`), 10) ||
           parseInt(localStorage.getItem("fb_current_limit_anggaran"), 10) ||
@@ -223,7 +234,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       renderChartsHalaman(trenMingguan, mapKategoriDinamis);
     } catch (error) {
-      console.error(error);
       tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Gagal mengambil data dari server.</td></tr>`;
     }
   }
@@ -339,13 +349,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (formTransaksi) {
     formTransaksi.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const tglIsoStr = new Date().toISOString().substring(0, 10) + "T12:00:00";
+
+      const inputTanggal = document.getElementById("tanggalTransaksi");
+      let tglIsoStr = "";
+
+      if (inputTanggal && inputTanggal.value) {
+        // 💡 FIX JAM DINAMIS: Ambil jam, menit, dan detik riil saat tombol klik simpan ditekan
+        const sekarang = new Date();
+        const jam = String(sekarang.getHours()).padStart(2, "0");
+        const menit = String(sekarang.getMinutes()).padStart(2, "0");
+        const detik = String(sekarang.getSeconds()).padStart(2, "0");
+
+        // Gabungkan tanggal pilihan dari kalender dengan waktu riil detik ini
+        tglIsoStr = `${inputTanggal.value}T${jam}:${menit}:${detik}`;
+      } else {
+        // Fallback jika input kalender tidak terbaca, kirim waktu penuh sekarang
+        tglIsoStr = new Date().toISOString().substring(0, 19);
+      }
+
       const payload = {
         nominal: parseFloat(inputNominal.value),
         kategori: selectKategori.value,
         keterangan: inputDeskripsi.value.trim(),
         akun: selectAkun.value,
-        tanggal: tglIsoStr,
+        tanggal: tglIsoStr, // 💡 Sekarang detak jamnya udah dinamis dan akurat!
         forceSave: false,
       };
 
@@ -354,8 +381,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         btnSimpan.innerText = "Menyimpan...";
         if (isPemasukan) await tambahPemasukan(payload);
         else await tambahPengeluaran(payload);
+
         alert("🎉 Transaksi berhasil dicatat!");
         formTransaksi.reset();
+
+        // Kembalikan kalender ke tanggal hari ini secara default
+        if (inputTanggal) {
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, "0");
+          const dd = String(today.getDate()).padStart(2, "0");
+          inputTanggal.value = `${yyyy}-${mm}-${dd}`;
+        }
+
         await muatRiwayatTabel();
       } catch (error) {
         alert("❌ Gagal menyimpan: " + error.message);
@@ -369,10 +407,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btnLogout) {
     btnLogout.addEventListener("click", (e) => {
       e.preventDefault();
-      if (confirm("Apakah Anda yakin ingin keluar dari FinanceBuddy?"))
+      if (confirm("Apakah Anda yakin ingin keluar dari FinanceBuddy?")) {
         localStorage.removeItem("fb_current_limit_anggaran");
-      localStorage.removeItem("fb_current_target_tabungan");
-      logout();
+        localStorage.removeItem("fb_current_target_tabungan");
+        logout();
+      }
     });
   }
 
