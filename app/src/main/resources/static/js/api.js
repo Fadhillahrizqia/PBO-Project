@@ -205,6 +205,35 @@ export async function validasiUser(userId) {
   });
 }
 
+// ─── KATEGORI ─────────────────────────────────────────────────────────────────
+
+export async function getKategori() {
+  return request("/api/categories", { method: "GET", headers: buildHeaders() });
+}
+
+export async function tambahKategori(payload) {
+  return request("/api/categories", {
+    method: "POST",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateKategori(id, payload) {
+  return request(`/api/categories/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteKategori(id) {
+  return request(`/api/categories/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(),
+  });
+}
+
 // ─── PEMASUKAN ────────────────────────────────────────────────────────────────
 
 /**

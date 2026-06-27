@@ -38,8 +38,8 @@ public class IncomeService {
         }
 
         // 2. Validasi Kategori Bersama (Wajib bertipe INCOME) (Menggunakan getKategori)
-        categoryRepository.findByNameIgnoreCaseAndType(request.getKategori(), "INCOME")
-                .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pemasukan"));
+        categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "INCOME", userId)
+        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
 
         // 3. Mapping ke Entity Transaction (Sekarang menggunakan setter Bahasa Indonesia)
         Transaction t = new Transaction();
@@ -76,9 +76,9 @@ public class IncomeService {
         }
 
         // Validasi Kategori (Menggunakan getKategori)
-        categoryRepository.findByNameIgnoreCaseAndType(request.getKategori(), "INCOME")
-                .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pemasukan"));
-
+        categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "INCOME", userId)
+        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
+        
         // Update data (Sekarang menggunakan setter Bahasa Indonesia)
         t.setNominal(request.getNominal());
         t.setKategori(request.getKategori());

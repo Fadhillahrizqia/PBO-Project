@@ -48,30 +48,32 @@ public class DataInitializer implements CommandLineRunner {
         
         List<Category> allCategories = categoryRepository.findAll();
 
-        ensureCategoryExists(allCategories, "MAKANAN", "EXPENSE");
-        ensureCategoryExists(allCategories, "TRANSPORTASI", "EXPENSE");
-        ensureCategoryExists(allCategories, "BELAJAR", "EXPENSE");
-        ensureCategoryExists(allCategories, "KOST", "EXPENSE");
-        ensureCategoryExists(allCategories, "HIBURAN", "EXPENSE");
-        ensureCategoryExists(allCategories, "TAGIHAN", "EXPENSE");
-        ensureCategoryExists(allCategories, "LAINNYA_PENGELUARAN", "EXPENSE");
+        // 💡 FIX: Semuanya diseragamkan pakai parameter ke-4 yaitu "admin"
+        ensureCategoryExists(allCategories, "MAKANAN", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "TRANSPORTASI", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "BELAJAR", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "KOST", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "HIBURAN", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "TAGIHAN", "EXPENSE", "admin");
 
-        ensureCategoryExists(allCategories, "UANG_SAKU", "INCOME");
-        ensureCategoryExists(allCategories, "GAJI_PART_TIME", "INCOME");
-        ensureCategoryExists(allCategories, "FREELANCE", "INCOME");
-        ensureCategoryExists(allCategories, "BONUS", "INCOME");
-        ensureCategoryExists(allCategories, "LAINNYA_PEMASUKAN", "INCOME");
+        ensureCategoryExists(allCategories, "UANG_SAKU", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "GAJI_PART_TIME", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "FREELANCE", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "BONUS", "INCOME", "admin");
 
         System.out.println("Data master kategori aman terkendali!");
     }
 
-    private void ensureCategoryExists(List<Category> existingCategories, String name, String type) {
+    // 💡 FIX: Tambahkan parameter `String userId` di sini
+    private void ensureCategoryExists(List<Category> existingCategories, String name, String type, String userId) {
         boolean exists = existingCategories.stream()
                 .anyMatch(c -> c.getName() != null && c.getName().equalsIgnoreCase(name) 
-                            && c.getType() != null && c.getType().equalsIgnoreCase(type));
+                            && c.getType() != null && c.getType().equalsIgnoreCase(type)
+                            && c.getUserId() != null && c.getUserId().equals(userId));
 
         if (!exists) {
-            categoryRepository.save(new Category(name, type));
+            // 💡 FIX: Gunakan constructor yang butuh 3 variabel (Nama, Tipe, UserId)
+            categoryRepository.save(new Category(name, type, userId));
             System.out.println("Kategori baru berhasil ditambahkan: " + name + " (" + type + ")");
         }
     }

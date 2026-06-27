@@ -19,7 +19,6 @@
   </head>
   <body class="bg-[#faf9f8] text-[#1a1c1c] font-sans antialiased">
     <div class="relative flex min-h-screen w-full flex-col lg:flex-row">
-      <!-- Sidebar Navigation -->
       <nav
         class="hidden md:flex flex-col py-6 px-4 bg-white shadow-sm h-screen w-64 fixed left-0 top-0 z-20"
       >
@@ -90,13 +89,11 @@
         </button>
       </nav>
 
-      <!-- Main Content Area -->
       <main class="flex-1 md:ml-64 p-6 space-y-6">
         <header class="flex items-center justify-between border-b pb-4">
           <h2 class="text-[24px] font-bold text-gray-800">Detail Pemasukan</h2>
         </header>
 
-        <!-- 3 Kartu Akumulasi Atas -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div
             class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-center min-h-[115px]"
@@ -153,7 +150,6 @@
           </div>
         </div>
 
-        <!-- Row Tengah: Dua Grafik Visualisasi -->
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div
             class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm lg:col-span-3"
@@ -176,7 +172,6 @@
           </div>
         </div>
 
-        <!-- Row Bawah: Input Form & Tabel Terperinci -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <div
             class="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm space-y-4"
@@ -198,21 +193,31 @@
                   required
                 />
               </div>
+
               <div>
                 <label
                   class="block text-[11px] font-semibold text-gray-500 mb-1"
                   >Kategori / Sumber</label
                 >
-                <select
-                  id="kategori"
-                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-[#366758] focus:border-[#366758]"
-                >
-                  <option value="UANG_SAKU">Uang Saku</option>
-                  <option value="GAJI_PART_TIME">Gaji Part-time</option>
-                  <option value="FREELANCE">Freelance</option>
-                  <option value="BONUS">Bonus</option>
-                </select>
+                <div class="flex gap-2 items-center">
+                  <select
+                    id="kategori"
+                    class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:ring-[#366758] focus:border-[#366758]"
+                    required
+                  ></select>
+                  <button
+                    type="button"
+                    id="btnBukaModalKategori"
+                    class="p-2 bg-gray-100 hover:bg-[#366758] hover:text-white text-gray-500 rounded-xl transition-colors border border-gray-200"
+                    title="Kelola Kategori"
+                  >
+                    <span class="material-symbols-outlined text-[18px] block"
+                      >edit_note</span
+                    >
+                  </button>
+                </div>
               </div>
+
               <div>
                 <label
                   class="block text-[11px] font-semibold text-gray-500 mb-1"
@@ -235,9 +240,28 @@
                 <select
                   id="akun"
                   class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-[#366758] focus:border-[#366758]"
+                ></select>
+              </div>
+              <div class="mb-4">
+                <label
+                  class="block text-[11px] font-semibold text-gray-500 mb-1"
+                  >Tanggal Transaksi</label
                 >
-                  <!-- Render dinamis -->
-                </select>
+                <div class="relative rounded-xl shadow-sm">
+                  <span
+                    class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 select-none"
+                  >
+                    <span class="material-symbols-outlined text-[18px]"
+                      >calendar_month</span
+                    >
+                  </span>
+                  <input
+                    type="date"
+                    id="tanggalTransaksi"
+                    class="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#366758] focus:ring-1 focus:ring-[#366758]"
+                    required
+                  />
+                </div>
               </div>
               <button
                 type="submit"
@@ -260,7 +284,6 @@
               </h4>
             </div>
             <div class="overflow-x-auto">
-              <!-- 💡 FIX SIZING: Menggunakan table-fixed dan persentase lebar w-[...] pasti di header th agar mentok ke bawah -->
               <table
                 class="w-full text-left text-xs border-collapse table-fixed min-w-[550px]"
               >
@@ -278,14 +301,64 @@
                 <tbody
                   id="tabelTransaksiBody"
                   class="divide-y divide-gray-50 bg-white text-gray-700"
-                >
-                  <!-- Render dinamis -->
-                </tbody>
+                ></tbody>
               </table>
             </div>
           </div>
         </div>
       </main>
+    </div>
+
+    <div
+      id="modalKelolaKategori"
+      class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4"
+    >
+      <div
+        class="bg-white rounded-[28px] max-w-sm w-full p-6 shadow-xl border border-gray-100 space-y-4"
+      >
+        <div class="flex justify-between items-center mb-2">
+          <h4 class="font-bold text-base text-gray-800">Kelola Kategori</h4>
+          <button
+            type="button"
+            id="btnTutupModalKategori"
+            class="text-gray-400 hover:text-rose-500 transition-colors"
+          >
+            <span class="material-symbols-outlined block">close</span>
+          </button>
+        </div>
+
+        <form id="formKategoriModal" class="flex gap-2">
+          <input type="hidden" id="txtIdKategoriModal" />
+          <input
+            type="text"
+            id="txtNamaKategoriModal"
+            placeholder="Nama Kategori..."
+            class="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#366758] font-semibold uppercase"
+            required
+            maxlength="30"
+          />
+          <button
+            type="submit"
+            id="btnSimpanKategoriModal"
+            class="px-4 py-2 bg-[#366758] hover:bg-[#1c4f41] text-white font-semibold text-xs rounded-xl transition-all"
+          >
+            Simpan
+          </button>
+          <button
+            type="button"
+            id="btnBatalKategoriModal"
+            class="hidden px-3 py-2 bg-gray-200 text-gray-600 font-semibold text-xs rounded-xl"
+          >
+            Batal
+          </button>
+        </form>
+
+        <div
+          class="max-h-48 overflow-y-auto border border-gray-100 rounded-xl bg-gray-50/50"
+        >
+          <div id="listKategoriModal" class="divide-y divide-gray-100"></div>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="js/transaksi.js"></script>

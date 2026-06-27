@@ -38,8 +38,8 @@ public class ExpenseService {
         }
 
         // 2. Validasi Kategori via Tabel Bersama (Menggunakan getKategori)
-        categoryRepository.findByNameIgnoreCaseAndType(request.getKategori(), "EXPENSE")
-                .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
+        categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "EXPENSE", userId)
+        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
 
         // OPTIMASI: Mengambil saldo langsung via agregasi database untuk menghindari OutOfMemory (OOM) pada skala data besar
         BigDecimal currentBalance = transactionRepository.getRealtimeBalance(userId);
@@ -86,8 +86,8 @@ public class ExpenseService {
         }
 
         // Menggunakan getKategori
-        categoryRepository.findByNameIgnoreCaseAndType(request.getKategori(), "EXPENSE")
-                .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
+        categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "EXPENSE", userId)
+        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
 
         BigDecimal currentBalance = transactionRepository.getRealtimeBalance(userId);
         // Menggunakan getNominal dan isForceSave
