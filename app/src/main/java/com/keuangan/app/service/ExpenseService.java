@@ -32,28 +32,23 @@ public class ExpenseService {
     }
 
     public String createExpense(ExpenseRequest request, String userId) {
-        // 1. Validasi Aturan Angka (Menggunakan getNominal)
         if (request.getNominal() == null || request.getNominal().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Nominal pengeluaran harus lebih besar dari 0");
         }
 
-        // 2. Validasi Kategori via Tabel Bersama (Menggunakan getKategori)
         categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "EXPENSE", userId)
         .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
 
-        // OPTIMASI: Mengambil saldo langsung via agregasi database untuk menghindari OutOfMemory (OOM) pada skala data besar
         BigDecimal currentBalance = transactionRepository.getRealtimeBalance(userId);
 
         if (currentBalance == null) {
             currentBalance = BigDecimal.ZERO;
         }
 
-        // 3. Pengecekan Batas Saldo Minus (Menggunakan getNominal dan isForceSave)
         if (currentBalance.compareTo(request.getNominal()) < 0 && !request.isForceSave()) {
             throw new IllegalStateException("WARNING_INSUFFICIENT_BALANCE");
         }
 
-        // 4. Eksekusi Simpan (Sekarang menggunakan setter Bahasa Indonesia)
         Transaction t = new Transaction();
         t.setUserId(userId);
         t.setType("EXPENSE");
@@ -80,22 +75,23 @@ public class ExpenseService {
             throw new SecurityException("Akses ditolak: Anda tidak berhak mengubah data ini");
         }
 
-        // Menggunakan getNominal
+        // 💡 PROTEKSI IMMUTABLE: Cek batas waktu 24 Jam
+        if (t.getTanggal().isBefore(LocalDateTime.now().minusHours(24))) {
+            throw new IllegalStateException("Transaksi ini sudah dikunci permanen (Lebih dari 24 jam) dan tidak bisa diubah.");
+        }
+
         if (request.getNominal() == null || request.getNominal().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Nominal pengeluaran harus lebih besar dari 0");
         }
 
-        // Menggunakan getKategori
         categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "EXPENSE", userId)
         .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
 
         BigDecimal currentBalance = transactionRepository.getRealtimeBalance(userId);
-        // Menggunakan getNominal dan isForceSave
         if (currentBalance.compareTo(request.getNominal()) < 0 && !request.isForceSave()) {
             throw new IllegalStateException("WARNING_INSUFFICIENT_BALANCE");
         }
 
-        // Update data (Sekarang menggunakan setter Bahasa Indonesia)
         t.setNominal(request.getNominal());
         t.setKategori(request.getKategori());
         t.setKeterangan(request.getKeterangan());
@@ -116,6 +112,11 @@ public class ExpenseService {
 
         if (!t.getUserId().equals(userId)) {
             throw new SecurityException("Akses ditolak: Anda tidak berhak menghapus data ini");
+        }
+
+        // 💡 PROTEKSI IMMUTABLE: Cek batas waktu 24 Jam
+        if (t.getTanggal().isBefore(LocalDateTime.now().minusHours(24))) {
+            throw new IllegalStateException("Transaksi ini sudah dikunci permanen (Lebih dari 24 jam) dan tidak bisa dihapus.");
         }
 
         transactionRepository.delete(t);

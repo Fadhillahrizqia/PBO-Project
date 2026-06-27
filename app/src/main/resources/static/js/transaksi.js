@@ -1,12 +1,16 @@
 /**
  * File: js/transaksi.js
- * 💡 FITUR TERBARU: Kalender Dinamis + Kategori Custom DB + Tren vs Bulan Lalu Dinamis
+ * 💡 FITUR TERBARU: Kalender Dinamis + Kategori Custom DB + Tren MoM + IMMUTABLE LEDGER 24 JAM 🔒
  */
 import {
   tambahPemasukan,
   getRiwayatPemasukan,
   tambahPengeluaran,
   getRiwayatPengeluaran,
+  updatePemasukan, // 💡 Impor fungsi update pemasukan
+  deletePemasukan, // 💡 Impor fungsi delete pemasukan
+  updatePengeluaran, // 💡 Impor fungsi update pengeluaran
+  deletePengeluaran, // 💡 Impor fungsi delete pengeluaran
   getProfil,
   getKategori,
   tambahKategori,
@@ -33,6 +37,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const inputTanggal = document.getElementById("tanggalTransaksi");
   const btnSimpan = document.getElementById("btnSimpan");
   const btnLogout = document.getElementById("btnLogout");
+  const btnBatalEditTrx = document.getElementById("btnBatalEdit"); // 💡 Tombol batal edit
 
   // 1. Set Default Kalender ke Hari Ini secara otomatis saat web diload
   if (inputTanggal) {
@@ -59,12 +64,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (selectKategori) {
       const dbKategori = await getKategori();
 
-      // Filter tipe kategori sesuai halaman yang sedang dibuka
       const listKategoriAktif = isPemasukan
         ? dbKategori.filter((k) => k.type === "INCOME")
         : dbKategori.filter((k) => k.type === "EXPENSE");
 
-      selectKategori.innerHTML = ""; // Bersihkan opsi bawaan HTML
+      selectKategori.innerHTML = "";
 
       if (listKategoriAktif.length === 0) {
         selectKategori.innerHTML = `<option value="">-- Buat Kategori Dulu --</option>`;
@@ -109,12 +113,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   const warnaCadangan = [
-    { bg: "#fef3c7", text: "#6b4e00" }, // Kuning
-    { bg: "#e0e7ff", text: "#3730a3" }, // Nila/Indigo
-    { bg: "#fce7f3", text: "#9d174d" }, // Pink
-    { bg: "#dcfce7", text: "#166534" }, // Hijau Tua
-    { bg: "#f3e8ff", text: "#6b21a8" }, // Ungu
-    { bg: "#ffedd5", text: "#9a3412" }, // Oranye
+    { bg: "#fef3c7", text: "#6b4e00" },
+    { bg: "#e0e7ff", text: "#3730a3" },
+    { bg: "#fce7f3", text: "#9d174d" },
+    { bg: "#dcfce7", text: "#166534" },
+    { bg: "#f3e8ff", text: "#6b21a8" },
+    { bg: "#ffedd5", text: "#9a3412" },
   ];
 
   function ambilGayaWarnaKategori(namaKat) {
@@ -151,13 +155,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     return tanggalStr;
   };
 
-  // 💡 JURUS INTI: Memuat riwayat tabel dengan filter bulan berjalan + MoM Trend Analisis
+  // 💡 Memuat riwayat tabel dengan filter bulan berjalan + MoM Trend Analisis
   async function muatRiwayatTabel() {
     const tbody = document.getElementById("tabelTransaksiBody");
     if (!tbody) return;
 
     try {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-500">Memuat data transaksi...</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">Memuat data transaksi...</td></tr>`;
       const dataRiwayat = isPemasukan
         ? await getRiwayatPemasukan()
         : await getRiwayatPengeluaran();
@@ -187,7 +191,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           const itemBulan = tglItem.getMonth();
           const itemTahun = tglItem.getFullYear();
 
-          // Filter data khusus Bulan INI
           if (itemBulan === bulanIni && itemTahun === tahunIni) {
             totalBulanIni += nominalNilai;
             jumlahItemBulanIni++;
@@ -202,15 +205,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             else if (hari <= 14) trenMingguan[1] += nominalNilai;
             else if (hari <= 21) trenMingguan[2] += nominalNilai;
             else trenMingguan[3] += nominalNilai;
-          }
-          // Filter data khusus Bulan LALU
-          else if (itemBulan === bulanLalu && itemTahun === tahunLalu) {
+          } else if (itemBulan === bulanLalu && itemTahun === tahunLalu) {
             totalBulanLalu += nominalNilai;
           }
         });
       }
 
-      // RUMUS KALKULASI PERSENTASE TREN "VS BULAN LALU"
       let persenTren = 0;
       if (totalBulanLalu > 0) {
         persenTren = ((totalBulanIni - totalBulanLalu) / totalBulanLalu) * 100;
@@ -318,7 +318,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       if (!dataRiwayat || dataRiwayat.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-gray-400">Belum ada riwayat catatan transaksi.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">Belum ada riwayat catatan transaksi.</td></tr>`;
         renderChartsHalaman(trenMingguan, mapKategoriDinamis);
         return;
       }
@@ -331,19 +331,79 @@ document.addEventListener("DOMContentLoaded", async () => {
         const simbolMataUang = isPemasukan ? "+" : "-";
         const gayaWarna = ambilGayaWarnaKategori(item.kategori);
 
+        // 💡 LOGIKA GEMBOK 24 JAM (IMMUTABLE LEDGER)
+        const tglTransaksi = new Date(item.tanggal);
+        const waktuSekarang = new Date();
+        const selisihJam = (waktuSekarang - tglTransaksi) / (1000 * 60 * 60);
+        const isTerkunci = selisihJam > 24;
+
+        let aksiHtml = "";
+        if (isTerkunci) {
+          aksiHtml = `<span class="inline-flex items-center gap-1 text-[10px] text-gray-400 bg-gray-100 px-2 py-1 rounded-md border border-gray-200" title="Dikunci permanen (Lebih dari 24 Jam)"><span class="material-symbols-outlined text-[14px]">lock</span></span>`;
+        } else {
+          aksiHtml = `
+            <div class="flex gap-1 items-center justify-end">
+              <button type="button" class="btn-edit-trx text-blue-500 hover:text-blue-700 p-1" data-id="${item.id}" data-nominal="${item.nominal}" data-kat="${item.kategori}" data-ket="${item.keterangan}" data-akun="${item.akun}" data-tgl="${item.tanggal.substring(0, 10)}" title="Edit"><span class="material-symbols-outlined text-[16px] block">edit</span></button>
+              <button type="button" class="btn-hapus-trx text-rose-500 hover:text-rose-700 p-1" data-id="${item.id}" title="Hapus"><span class="material-symbols-outlined text-[16px] block">delete</span></button>
+            </div>
+          `;
+        }
+
         tbody.innerHTML += `
           <tr class="border-b hover:bg-gray-50/50 transition-colors bg-white">
-              <td class="py-3.5 px-6 text-gray-400 font-mono">${formatWaktuRealtime(item.tanggal)}</td>
+              <td class="py-3.5 px-6 text-gray-400 font-mono truncate">${formatWaktuRealtime(item.tanggal)}</td>
               <td class="py-3.5 px-6"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wide" style="background-color: ${gayaWarna.bg}; color: ${gayaWarna.text}">${item.kategori}</span></td>
               <td class="py-3.5 px-6 font-semibold text-gray-800 break-all whitespace-normal">${renderDeskripsiDenganToggle(item.keterangan, idx)}</td>
-              <td class="py-3.5 px-6 text-gray-400 font-semibold uppercase">${item.akun || "-"}</td>
-              <td class="py-3.5 px-6 text-right ${warnaTeksJumlah}">${simbolMataUang}${formatRupiah(item.nominal)}</td>
+              <td class="py-3.5 px-6 text-gray-400 font-semibold uppercase truncate">${item.akun || "-"}</td>
+              <td class="py-3.5 px-6 text-right ${warnaTeksJumlah} truncate">${simbolMataUang}${formatRupiah(item.nominal)}</td>
+              <td class="py-3.5 px-4 text-right">${aksiHtml}</td>
           </tr>`;
+      });
+
+      // 💡 BINDING AKSI TOMBOL EDIT & HAPUS
+      document.querySelectorAll(".btn-hapus-trx").forEach((btn) => {
+        btn.onclick = async function () {
+          if (confirm("Yakin ingin menghapus transaksi ini?")) {
+            try {
+              const targetId = this.getAttribute("data-id");
+              if (isPemasukan) await deletePemasukan(targetId);
+              else await deletePengeluaran(targetId);
+              await muatRiwayatTabel(); // Refresh UI instan
+            } catch (e) {
+              alert("❌ Gagal menghapus: " + e.message);
+            }
+          }
+        };
+      });
+
+      document.querySelectorAll(".btn-edit-trx").forEach((btn) => {
+        btn.onclick = function () {
+          // Isi data ke form
+          document.getElementById("txtIdTransaksi").value =
+            this.getAttribute("data-id");
+          document.getElementById("nominal").value =
+            this.getAttribute("data-nominal");
+          document.getElementById("kategori").value =
+            this.getAttribute("data-kat");
+          document.getElementById("deskripsi").value =
+            this.getAttribute("data-ket");
+          document.getElementById("akun").value =
+            this.getAttribute("data-akun");
+          document.getElementById("tanggalTransaksi").value =
+            this.getAttribute("data-tgl");
+
+          // Ubah tombol submit menjadi mode update
+          btnSimpan.innerText = "Update Transaksi";
+          if (btnBatalEditTrx) btnBatalEditTrx.classList.remove("hidden");
+
+          // Scroll layar ke form secara halus
+          formTransaksi.scrollIntoView({ behavior: "smooth", block: "center" });
+        };
       });
 
       renderChartsHalaman(trenMingguan, mapKategoriDinamis);
     } catch (error) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Gagal mengambil data dari server.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Gagal mengambil data dari server.</td></tr>`;
     }
   }
 
@@ -456,10 +516,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // 💡 AKSI TOMBOL BATAL EDIT
+  if (btnBatalEditTrx) {
+    btnBatalEditTrx.onclick = () => {
+      formTransaksi.reset();
+      document.getElementById("txtIdTransaksi").value = "";
+      btnSimpan.innerText = isPemasukan
+        ? "Simpan Pemasukan"
+        : "Simpan Pengeluaran";
+      btnBatalEditTrx.classList.add("hidden");
+    };
+  }
+
+  // 💡 AKSI SUBMIT FORM (CREATE ATAU UPDATE)
   if (formTransaksi) {
     formTransaksi.addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      const idUpdate = document.getElementById("txtIdTransaksi").value;
       const inputTanggal = document.getElementById("tanggalTransaksi");
       let tglIsoStr = "";
 
@@ -491,11 +565,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       try {
         btnSimpan.disabled = true;
         btnSimpan.innerText = "Menyimpan...";
-        if (isPemasukan) await tambahPemasukan(payload);
-        else await tambahPengeluaran(payload);
 
-        alert("🎉 Transaksi berhasil dicatat!");
+        // Cek mode Update atau Create
+        if (idUpdate) {
+          if (isPemasukan) await updatePemasukan(idUpdate, payload);
+          else await updatePengeluaran(idUpdate, payload);
+          alert("🎉 Transaksi berhasil diperbarui!");
+        } else {
+          if (isPemasukan) await tambahPemasukan(payload);
+          else await tambahPengeluaran(payload);
+          alert("🎉 Transaksi baru berhasil dicatat!");
+        }
+
         formTransaksi.reset();
+        document.getElementById("txtIdTransaksi").value = "";
+        btnSimpan.innerText = isPemasukan
+          ? "Simpan Pemasukan"
+          : "Simpan Pengeluaran";
+        if (btnBatalEditTrx) btnBatalEditTrx.classList.add("hidden");
 
         if (inputTanggal) {
           const today = new Date();
@@ -510,7 +597,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         alert("❌ Gagal menyimpan: " + error.message);
       } finally {
         btnSimpan.disabled = false;
-        btnSimpan.innerText = "Simpan";
+        if (!document.getElementById("txtIdTransaksi").value) {
+          btnSimpan.innerText = isPemasukan
+            ? "Simpan Pemasukan"
+            : "Simpan Pengeluaran";
+        } else {
+          btnSimpan.innerText = "Update Transaksi";
+        }
       }
     });
   }

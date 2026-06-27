@@ -32,16 +32,13 @@ public class IncomeService {
     }
 
     public String saveIncome(IncomeRequest request, String userId) {
-        // 1. Validasi Angka (Menggunakan getNominal)
         if (request.getNominal() == null || request.getNominal().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Nominal pemasukan harus lebih besar dari 0");
         }
 
-        // 2. Validasi Kategori Bersama (Wajib bertipe INCOME) (Menggunakan getKategori)
         categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "INCOME", userId)
-        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
+        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pemasukan"));
 
-        // 3. Mapping ke Entity Transaction (Sekarang menggunakan setter Bahasa Indonesia)
         Transaction t = new Transaction();
         t.setUserId(userId);
         t.setType("INCOME");
@@ -65,21 +62,22 @@ public class IncomeService {
         Transaction t = transactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Data pemasukan tidak ditemukan"));
 
-        // KEAMANAN IDOR: Cek apakah transaksi ini benar milik user yang sedang login
         if (!t.getUserId().equals(userId)) {
             throw new SecurityException("Akses ditolak: Anda tidak berhak mengubah data ini");
         }
 
-        // Validasi Angka (Menggunakan getNominal)
+        // 💡 PROTEKSI IMMUTABLE: Cek batas waktu 24 Jam
+        if (t.getTanggal().isBefore(LocalDateTime.now().minusHours(24))) {
+            throw new IllegalStateException("Transaksi ini sudah dikunci permanen (Lebih dari 24 jam) dan tidak bisa diubah.");
+        }
+
         if (request.getNominal() == null || request.getNominal().compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Nominal pemasukan harus lebih besar dari 0");
         }
 
-        // Validasi Kategori (Menggunakan getKategori)
         categoryRepository.findByNameTypeAndUserOrSystem(request.getKategori(), "INCOME", userId)
-        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pengeluaran"));
+        .orElseThrow(() -> new IllegalArgumentException("Kategori '" + request.getKategori() + "' tidak valid untuk pemasukan"));
         
-        // Update data (Sekarang menggunakan setter Bahasa Indonesia)
         t.setNominal(request.getNominal());
         t.setKategori(request.getKategori());
         t.setKeterangan(request.getKeterangan());
@@ -98,9 +96,13 @@ public class IncomeService {
         Transaction t = transactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Data pemasukan tidak ditemukan"));
 
-        // KEAMANAN IDOR: Cek apakah transaksi ini benar milik user yang sedang login
         if (!t.getUserId().equals(userId)) {
             throw new SecurityException("Akses ditolak: Anda tidak berhak menghapus data ini");
+        }
+
+        // 💡 PROTEKSI IMMUTABLE: Cek batas waktu 24 Jam
+        if (t.getTanggal().isBefore(LocalDateTime.now().minusHours(24))) {
+            throw new IllegalStateException("Transaksi ini sudah dikunci permanen (Lebih dari 24 jam) dan tidak bisa dihapus.");
         }
 
         transactionRepository.delete(t);

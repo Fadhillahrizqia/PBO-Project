@@ -250,6 +250,21 @@ export async function tambahPemasukan(payload) {
   });
 }
 
+export async function updatePemasukan(id, payload) {
+  return request(`/api/transaksi/pemasukan/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePemasukan(id) {
+  return request(`/api/transaksi/pemasukan/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(),
+  });
+}
+
 /**
  * Mendapatkan riwayat pemasukan milik pengguna yang login.
  * @param {{ bulan?: number, tahun?: number }} filter - opsional
@@ -282,6 +297,21 @@ export async function tambahPengeluaran(payload) {
     method: "POST",
     headers: buildHeaders(),
     body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePengeluaran(id, payload) {
+  return request(`/api/transaksi/pengeluaran/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePengeluaran(id) {
+  return request(`/api/transaksi/pengeluaran/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(),
   });
 }
 

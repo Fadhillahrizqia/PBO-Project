@@ -56,8 +56,8 @@ public class DataInitializer implements CommandLineRunner {
         ensureCategoryExists(allCategories, "HIBURAN", "EXPENSE", "admin");
         ensureCategoryExists(allCategories, "TAGIHAN", "EXPENSE", "admin");
 
-        ensureCategoryExists(allCategories, "UANG_SAKU", "INCOME", "admin");
-        ensureCategoryExists(allCategories, "GAJI_PART_TIME", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "UANG SAKU", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "GAJI PART TIME", "INCOME", "admin");
         ensureCategoryExists(allCategories, "FREELANCE", "INCOME", "admin");
         ensureCategoryExists(allCategories, "BONUS", "INCOME", "admin");
 
