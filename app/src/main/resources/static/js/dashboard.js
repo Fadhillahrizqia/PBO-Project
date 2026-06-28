@@ -1,6 +1,6 @@
 /**
  * File: js/dashboard.js
- * 💡 FITUR: Sinkronisasi Akun, Warna Kategori Dinamis & Kalkulasi Tren (MoM)
+ * 💡 FITUR: Sinkronisasi Akun, Warna Kategori Dinamis HSL & Kalkulasi Tren (MoM)
  */
 import {
   getDashboardData,
@@ -40,39 +40,35 @@ const formatWaktuRealtime = (tanggalStr) => {
   return tanggalStr;
 };
 
-// 💡 1. PENGHASIL WARNA DINAMIS
+// 💡 1. PENGHASIL WARNA DINAMIS (VERSI HIGH CONTRAST + HSL)
 const mapWarnaKategori = {
-  BONUS: { bg: "#c7ebd9", text: "#133a2e" },
-  UANG_SAKU: { bg: "#b5ead7", text: "#164436" },
-  GAJI_PART_TIME: { bg: "#b7e7f7", text: "#1a4b61" },
-  FREELANCE: { bg: "#d7defa", text: "#2a3661" },
-  MAKANAN: { bg: "#ffb7b2", text: "#7a201c" },
-  MAKAN: { bg: "#ffb7b2", text: "#7a201c" },
-  TRANSPORT: { bg: "#ffdac1", text: "#7d421b" },
-  BELAJAR: { bg: "#e2f0cb", text: "#3d521d" },
-  KOST: { bg: "#ffccd5", text: "#801f30" },
-  HIBURAN: { bg: "#fef3c7", text: "#6b4e00" },
+  BONUS: { bg: "#059669", text: "#ffffff" },
+  UANG_SAKU: { bg: "#0d9488", text: "#ffffff" },
+  GAJI_PART_TIME: { bg: "#0284c7", text: "#ffffff" },
+  FREELANCE: { bg: "#4f46e5", text: "#ffffff" },
+  MAKANAN: { bg: "#e11d48", text: "#ffffff" },
+  MAKAN: { bg: "#e11d48", text: "#ffffff" },
+  TRANSPORT: { bg: "#ea580c", text: "#ffffff" },
+  BELAJAR: { bg: "#2563eb", text: "#ffffff" },
+  KOST: { bg: "#475569", text: "#ffffff" },
+  HIBURAN: { bg: "#d97706", text: "#ffffff" },
+  TAGIHAN: { bg: "#dc2626", text: "#ffffff" },
 };
-
-const warnaCadangan = [
-  { bg: "#fef3c7", text: "#6b4e00" },
-  { bg: "#e0e7ff", text: "#3730a3" },
-  { bg: "#fce7f3", text: "#9d174d" },
-  { bg: "#dcfce7", text: "#166534" },
-  { bg: "#f3e8ff", text: "#6b21a8" },
-  { bg: "#ffedd5", text: "#9a3412" },
-];
 
 function ambilGayaWarnaKategori(namaKat) {
   const key = (namaKat || "LAINNYA").toUpperCase().trim().replace(/\s+/g, "_");
+
   if (mapWarnaKategori[key]) return mapWarnaKategori[key];
 
   let hash = 0;
   for (let i = 0; i < key.length; i++) {
     hash = key.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const indexWarna = Math.abs(hash) % warnaCadangan.length;
-  return warnaCadangan[indexWarna];
+
+  // 💡 FIX: Kalikan dengan 137.5 (Golden Angle) agar warna selalu melompat jauh!
+  const hue = Math.floor(Math.abs(hash) * 137.5) % 360;
+
+  return { bg: `hsl(${hue}, 75%, 45%)`, text: "#ffffff" };
 }
 
 function renderDeskripsiDinamis(ket, index, pagePrefix) {
@@ -297,7 +293,7 @@ function renderCharts(summary) {
             data: summary.grafikBulanan
               ? summary.grafikBulanan.map((i) => i.pemasukan)
               : [0, 0, 0],
-            backgroundColor: "#b5ead7",
+            backgroundColor: "#059669",
             borderRadius: 4,
           },
           {
@@ -305,7 +301,7 @@ function renderCharts(summary) {
             data: summary.grafikBulanan
               ? summary.grafikBulanan.map((i) => i.pengeluaran)
               : [0, 0, 0],
-            backgroundColor: "#ffb7b2",
+            backgroundColor: "#e11d48",
             borderRadius: 4,
           },
         ],
@@ -313,6 +309,15 @@ function renderCharts(summary) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: "Bulan",
+              font: { family: "Inter", size: 11, weight: "bold" },
+            },
+          },
+        },
         plugins: {
           legend: {
             labels: {

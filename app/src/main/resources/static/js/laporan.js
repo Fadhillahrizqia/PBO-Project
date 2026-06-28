@@ -1,7 +1,7 @@
 /**
  * File: js/laporan.js
  * Engine Pengolah Jurnal Laporan Gabungan & Statistik Keuangan
- * 💡 FIX FIGMA: Perbandingan multi-bar Jan-Des, Donut dengan Persen, dan Panel Statistik Riil
+ * 💡 FITUR: Filter Tahunan (Year-to-Date), Perbandingan multi-bar Jan-Des, Donut dengan Persen, dan Warna HSL High Contrast 🎨
  */
 import {
   getRiwayatPemasukan,
@@ -37,23 +37,35 @@ const formatRupiah = (angka) => {
   }).format(angka || 0);
 };
 
+// 💡 PENYELARASAN WARNA DINAMIS HSL
 const mapWarnaKategori = {
-  BONUS: { bg: "#c7ebd9", text: "#133a2e" },
-  UANG_SAKU: { bg: "#b5ead7", text: "#164436" },
-  GAJI_PART_TIME: { bg: "#b7e7f7", text: "#1a4b61" },
-  FREELANCE: { bg: "#d7defa", text: "#2a3661" },
-  MAKANAN: { bg: "#ffb7b2", text: "#7a201c" },
-  MAKAN: { bg: "#ffb7b2", text: "#7a201c" },
-  TRANSPORT: { bg: "#ffdac1", text: "#7d421b" },
-  BELAJAR: { bg: "#e2f0cb", text: "#3d521d" },
-  KOST: { bg: "#ffccd5", text: "#801f30" },
-  HIBURAN: { bg: "#fef3c7", text: "#6b4e00" },
+  BONUS: { bg: "#059669", text: "#ffffff" },
+  UANG_SAKU: { bg: "#0d9488", text: "#ffffff" },
+  GAJI_PART_TIME: { bg: "#0284c7", text: "#ffffff" },
+  FREELANCE: { bg: "#4f46e5", text: "#ffffff" },
+  MAKANAN: { bg: "#e11d48", text: "#ffffff" },
+  MAKAN: { bg: "#e11d48", text: "#ffffff" },
+  TRANSPORT: { bg: "#ea580c", text: "#ffffff" },
+  BELAJAR: { bg: "#2563eb", text: "#ffffff" },
+  KOST: { bg: "#475569", text: "#ffffff" },
+  HIBURAN: { bg: "#d97706", text: "#ffffff" },
+  TAGIHAN: { bg: "#dc2626", text: "#ffffff" },
 };
 
 function ambilGayaWarnaKategori(namaKat) {
   const key = (namaKat || "LAINNYA").toUpperCase().trim().replace(/\s+/g, "_");
+
   if (mapWarnaKategori[key]) return mapWarnaKategori[key];
-  return { bg: "#f3f4f6", text: "#374151" };
+
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = key.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // 💡 FIX: Kalikan dengan 137.5 (Golden Angle) agar warna selalu melompat jauh!
+  const hue = Math.floor(Math.abs(hash) * 137.5) % 360;
+
+  return { bg: `hsl(${hue}, 75%, 45%)`, text: "#ffffff" };
 }
 
 async function initHalamanLaporan() {
@@ -69,32 +81,46 @@ async function initHalamanLaporan() {
     const arrayBulananOut = Array(12).fill(0);
     const alokasiKategori = {};
 
-    // Proses data Pemasukan
+    const tahunSekarang = new Date().getFullYear(); // Ambil Tahun Ini
+
+    // 💡 1. Proses data Pemasukan (Filter Hanya Tahun Berjalan)
     dataPemasukan.forEach((item) => {
       const nominal = item.nominal || 0;
-      totalIn += nominal;
-      if (item.tanggal) {
-        const bulanIdx = new Date(item.tanggal).getMonth(); // 0 = Jan, 11 = Des
-        if (bulanIdx >= 0 && bulanIdx < 12) {
-          arrayBulananIn[bulanIdx] += nominal;
+      const itemTahun = item.tanggal
+        ? new Date(item.tanggal).getFullYear()
+        : tahunSekarang;
+
+      if (itemTahun === tahunSekarang) {
+        totalIn += nominal;
+        if (item.tanggal) {
+          const bulanIdx = new Date(item.tanggal).getMonth(); // 0 = Jan, 11 = Des
+          if (bulanIdx >= 0 && bulanIdx < 12) {
+            arrayBulananIn[bulanIdx] += nominal;
+          }
         }
       }
     });
 
-    // Proses data Pengeluaran
+    // 💡 2. Proses data Pengeluaran (Filter Hanya Tahun Berjalan)
     dataPengeluaran.forEach((item) => {
       const nominal = item.nominal || 0;
-      totalOut += nominal;
-      if (item.tanggal) {
-        const bulanIdx = new Date(item.tanggal).getMonth();
-        if (bulanIdx >= 0 && bulanIdx < 12) {
-          arrayBulananOut[bulanIdx] += nominal;
+      const itemTahun = item.tanggal
+        ? new Date(item.tanggal).getFullYear()
+        : tahunSekarang;
+
+      if (itemTahun === tahunSekarang) {
+        totalOut += nominal;
+        if (item.tanggal) {
+          const bulanIdx = new Date(item.tanggal).getMonth();
+          if (bulanIdx >= 0 && bulanIdx < 12) {
+            arrayBulananOut[bulanIdx] += nominal;
+          }
         }
+        const kat = item.kategori
+          ? item.kategori.trim().toUpperCase()
+          : "LAINNYA";
+        alokasiKategori[kat] = (alokasiKategori[kat] || 0) + nominal;
       }
-      const kat = item.kategori
-        ? item.kategori.trim().toUpperCase()
-        : "LAINNYA";
-      alokasiKategori[kat] = (alokasiKategori[kat] || 0) + nominal;
     });
 
     // Suntik data angka ke kartu atas
@@ -119,8 +145,7 @@ async function initHalamanLaporan() {
       }
     }
 
-    // Set nama tahun otomatis berdasarkan tanggal data terakhir
-    const tahunSekarang = new Date().getFullYear();
+    // Set nama tahun otomatis berdasarkan tanggal perangkat (Tahun Ini)
     document.getElementById("lblTahunPemasukan").innerText =
       `Tahun ${tahunSekarang}`;
     document.getElementById("lblTahunPengeluaran").innerText =
@@ -203,13 +228,13 @@ function renderGrafikKomparasiBulanan(dataMasuk, dataKeluar) {
         {
           label: "Pemasukan",
           data: dataMasuk,
-          backgroundColor: "#b5ead7",
+          backgroundColor: "#059669", // Hijau Emerald Pekat
           borderRadius: 4,
         },
         {
           label: "Pengeluaran",
           data: dataKeluar,
-          backgroundColor: "#ffb7b2",
+          backgroundColor: "#e11d48", // Merah Rose Pekat
           borderRadius: 4,
         },
       ],
