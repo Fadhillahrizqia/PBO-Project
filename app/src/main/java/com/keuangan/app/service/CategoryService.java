@@ -4,6 +4,8 @@ import com.keuangan.app.dto.CategoryRequest;
 import com.keuangan.app.model.Category;
 import com.keuangan.app.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -17,7 +19,6 @@ public class CategoryService {
 
     @Transactional(readOnly = true)
     public List<Category> getCategories(String userId) {
-        // 💡 Sekarang mengambil data milik user + data master dari SYSTEM
         return categoryRepository.findAllByUserIdOrSystem(userId);
     }
 
@@ -33,13 +34,17 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Kategori tidak ditemukan"));
         
-        // 💡 CEK KEPEMILIKAN
-        if (!category.getUserId().equals(userId)) {
+        // 💡 UTAMA: Ambil info authorities/role yang sedang login dari Spring Security Context
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equalsIgnoreCase("ROLE_ADMIN") || a.getAuthority().equalsIgnoreCase("ADMIN"));
+
+        // 💡 SMART OVERRIDE BACKEND: Jika bukan Admin DAN user_id tidak cocok, baru block!
+        if (!isAdmin && !category.getUserId().equals(userId)) {
             throw new SecurityException("Akses ditolak: Ini bukan kategori Anda.");
         }
         
         category.setName(req.getName().trim().toUpperCase());
-        // Tipe (INCOME/EXPENSE) sebaiknya tidak diubah agar riwayat transaksi tidak rusak
         return categoryRepository.save(category);
     }
 
@@ -47,7 +52,13 @@ public class CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Kategori tidak ditemukan"));
 
-        if (!category.getUserId().equals(userId)) {
+        // 💡 UTAMA: Ambil info authorities/role yang sedang login dari Spring Security Context
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equalsIgnoreCase("ROLE_ADMIN") || a.getAuthority().equalsIgnoreCase("ADMIN"));
+
+        // 💡 SMART OVERRIDE BACKEND: Jika bukan Admin DAN user_id tidak cocok, baru block!
+        if (!isAdmin && !category.getUserId().equals(userId)) {
             throw new SecurityException("Akses ditolak: Ini bukan kategori Anda.");
         }
         categoryRepository.deleteById(id);

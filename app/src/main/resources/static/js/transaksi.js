@@ -1,6 +1,6 @@
 /**
  * File: js/transaksi.js
- * 💡 FITUR TERBARU: Kalender Dinamis + Kategori Custom DB + Tren MoM + IMMUTABLE LEDGER 24 JAM 🔒 + WARNA HSL HIGH CONTRAST 🎨 + VALIDASI UPFRONT OPSI PAKSA ⚠️
+ * 💡 FITUR TERBARU: Kalender Dinamis + Kategori Custom DB + Tren MoM + IMMUTABLE LEDGER 24 JAM 🔒 + WARNA HSL HIGH CONTRAST 🎨 + VALIDASI UPFRONT OPSI PAKSA ⚠️ + RBAC KATEGORI (ADMIN vs USER) 🔒
  */
 import {
   tambahPemasukan,
@@ -48,12 +48,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     inputTanggal.value = `${yyyy}-${mm}-${dd}`;
   }
 
-  // 2. Muat Profil User
+  // 2. Muat Profil User & Simpan Role untuk Proteksi Komponen
   let userPrefix = "guest";
+  let currentUserRole = "USER"; // 💡 SAKLAR UTAMA ROLE (USER / ADMIN)
   try {
     const pData = await getProfil();
-    if (pData && pData.data && pData.data.email) {
-      userPrefix = pData.data.email.replace(/[^a-zA-Z0-9]/g, "_");
+    if (pData && pData.data) {
+      if (pData.data.email) {
+        userPrefix = pData.data.email.replace(/[^a-zA-Z0-9]/g, "_");
+      }
+      if (pData.data.role) {
+        currentUserRole = pData.data.role.toUpperCase(); // Ambil role dinamis dari DB
+      }
     }
   } catch (e) {
     console.error(e);
@@ -98,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // 💡 5. GENERATOR WARNA DINAMIS (VERSI HIGH CONTRAST + HSL HASH)
+  // 5. GENERATOR WARNA DINAMIS
   const mapWarnaKategori = {
     BONUS: { bg: "#059669", text: "#ffffff" },
     UANG_SAKU: { bg: "#0d9488", text: "#ffffff" },
@@ -118,17 +124,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       .toUpperCase()
       .trim()
       .replace(/\s+/g, "_");
-
     if (mapWarnaKategori[key]) return mapWarnaKategori[key];
 
     let hash = 0;
     for (let i = 0; i < key.length; i++) {
       hash = key.charCodeAt(i) + ((hash << 5) - hash);
     }
-
-    // 💡 FIX: Kalikan dengan 137.5 (Golden Angle) agar warna selalu melompat jauh!
     const hue = Math.floor(Math.abs(hash) * 137.5) % 360;
-
     return { bg: `hsl(${hue}, 75%, 45%)`, text: "#ffffff" };
   }
 
@@ -150,7 +152,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     return tanggalStr;
   };
 
-  // 💡 Memuat riwayat tabel dengan filter bulan berjalan + MoM Trend Analisis
   async function muatRiwayatTabel() {
     const tbody = document.getElementById("tabelTransaksiBody");
     if (!tbody) return;
@@ -207,11 +208,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       let persenTren = 0;
-      if (totalBulanLalu > 0) {
+      if (totalBulanLalu > 0)
         persenTren = ((totalBulanIni - totalBulanLalu) / totalBulanLalu) * 100;
-      } else if (totalBulanIni > 0) {
-        persenTren = 100;
-      }
+      else if (totalBulanIni > 0) persenTren = 100;
 
       const trenDibulatkan = Math.abs(Math.round(persenTren));
       const wadahTren = isPemasukan
@@ -227,7 +226,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (wadahTren && ikonTren && teksTren) {
         wadahTren.classList.remove("hidden");
         let warnaKelas = "text-gray-400";
-
         if (persenTren > 0) {
           teksTren.innerText = `+${trenDibulatkan}%`;
           ikonTren.innerText = "trending_up";
@@ -259,7 +257,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const targetTabungan =
           parseInt(localStorage.getItem(`${userPrefix}_target_tabungan`), 10) ||
-          parseInt(localStorage.getItem("fb_current_target_tabungan"), 10) ||
           500000;
         const elTargetVal = document.getElementById("lblTargetValue");
         const elTargetPct = document.getElementById("lblTargetPercent");
@@ -296,7 +293,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const limitAnggaran =
           parseInt(localStorage.getItem(`${userPrefix}_limit_anggaran`), 10) ||
-          parseInt(localStorage.getItem("fb_current_limit_anggaran"), 10) ||
           1000000;
         const sisaBudget = limitAnggaran - totalBulanIni;
 
@@ -312,12 +308,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       }
 
-      if (!dataRiwayat || dataRiwayat.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-400">Belum ada riwayat catatan transaksi.</td></tr>`;
-        renderChartsHalaman(trenMingguan, mapKategoriDinamis);
-        return;
-      }
-
       dataRiwayat.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
       dataRiwayat.forEach((item, idx) => {
         const warnaTeksJumlah = isPemasukan
@@ -326,7 +316,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const simbolMataUang = isPemasukan ? "+" : "-";
         const gayaWarna = ambilGayaWarnaKategori(item.kategori);
 
-        // 💡 LOGIKA GEMBOK 24 JAM (IMMUTABLE LEDGER)
         const tglTransaksi = new Date(item.tanggal);
         const waktuSekarang = new Date();
         const selisihJam = (waktuSekarang - tglTransaksi) / (1000 * 60 * 60);
@@ -340,8 +329,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             <div class="flex gap-1 items-center justify-end">
               <button type="button" class="btn-edit-trx text-blue-500 hover:text-blue-700 p-1" data-id="${item.id}" data-nominal="${item.nominal}" data-kat="${item.kategori}" data-ket="${item.keterangan}" data-akun="${item.akun}" data-tgl="${item.tanggal.substring(0, 10)}" title="Edit"><span class="material-symbols-outlined text-[16px] block">edit</span></button>
               <button type="button" class="btn-hapus-trx text-rose-500 hover:text-rose-700 p-1" data-id="${item.id}" title="Hapus"><span class="material-symbols-outlined text-[16px] block">delete</span></button>
-            </div>
-          `;
+            </div>`;
         }
 
         tbody.innerHTML += `
@@ -355,7 +343,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           </tr>`;
       });
 
-      // 💡 BINDING AKSI TOMBOL EDIT & HAPUS
       document.querySelectorAll(".btn-hapus-trx").forEach((btn) => {
         btn.onclick = async function () {
           if (confirm("Yakin ingin menghapus transaksi ini?")) {
@@ -363,7 +350,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               const targetId = this.getAttribute("data-id");
               if (isPemasukan) await deletePemasukan(targetId);
               else await deletePengeluaran(targetId);
-              await muatRiwayatTabel(); // Refresh UI instan
+              await muatRiwayatTabel();
             } catch (e) {
               alert("❌ Gagal menghapus: " + e.message);
             }
@@ -373,7 +360,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       document.querySelectorAll(".btn-edit-trx").forEach((btn) => {
         btn.onclick = function () {
-          // Isi data ke form
           document.getElementById("txtIdTransaksi").value =
             this.getAttribute("data-id");
           document.getElementById("nominal").value =
@@ -386,12 +372,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             this.getAttribute("data-akun");
           document.getElementById("tanggalTransaksi").value =
             this.getAttribute("data-tgl");
-
-          // Ubah tombol submit menjadi mode update
           btnSimpan.innerText = "Update Transaksi";
           if (btnBatalEditTrx) btnBatalEditTrx.classList.remove("hidden");
-
-          // Scroll layar ke form secara halus
           formTransaksi.scrollIntoView({ behavior: "smooth", block: "center" });
         };
       });
@@ -446,12 +428,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              labels: {
-                usePointStyle: true,
-                pointStyle: "rectRounded",
-                boxWidth: 6,
-                boxHeight: 6,
-              },
+              labels: { usePointStyle: true, boxWidth: 6, boxHeight: 6 },
             },
           },
         },
@@ -462,7 +439,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (donutChartInst) donutChartInst.destroy();
       const labelsArray = Object.keys(objekKategori);
       const dataArray = Object.values(objekKategori);
-
       const warnaArray = labelsArray.map(
         (lbl) => ambilGayaWarnaKategori(lbl).bg,
       );
@@ -498,7 +474,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               position: "right",
               labels: {
                 usePointStyle: true,
-                pointStyle: "rectRounded",
                 boxWidth: 8,
                 boxHeight: 8,
                 padding: 12,
@@ -511,7 +486,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // 💡 AKSI TOMBOL BATAL EDIT
   if (btnBatalEditTrx) {
     btnBatalEditTrx.onclick = () => {
       formTransaksi.reset();
@@ -523,7 +497,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     };
   }
 
-  // 💡 AKSI SUBMIT FORM (CREATE ATAU UPDATE)
   if (formTransaksi) {
     formTransaksi.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -537,7 +510,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         const jam = String(sekarang.getHours()).padStart(2, "0");
         const menit = String(sekarang.getMinutes()).padStart(2, "0");
         const detik = String(sekarang.getSeconds()).padStart(2, "0");
-
         tglIsoStr = `${inputTanggal.value}T${jam}:${menit}:${detik}`;
       } else {
         tglIsoStr = new Date().toISOString().substring(0, 19);
@@ -548,7 +520,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
-      // 💡 SINKRONISASI PAYLOAD: Kirim CamelCase & SnakeCase sekaligus demi kestabilan Jackson DTO
       const payload = {
         nominal: parseFloat(inputNominal.value),
         kategori: selectKategori.value,
@@ -559,12 +530,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         force_save: false,
       };
 
-      // 🚨 ── FITUR VALIDASI SALDO MINUS DENGAN OPSI INPUT PAKSA ──────────────────
       if (!isPemasukan) {
         try {
           const incRaw = (await getRiwayatPemasukan()) || [];
           const expRaw = (await getRiwayatPengeluaran()) || [];
-
           const inc = Array.isArray(incRaw)
             ? incRaw
             : incRaw.data || incRaw.content || [];
@@ -582,18 +551,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
           const saldoSaatIni = totalMasuk - totalKeluar;
 
-          // Jika pengeluaran saat ini bikin tabungan jebol di bawah nol, langsung todong dialog konfirmasi
           if (saldoSaatIni - payload.nominal < 0) {
             const konfirmasiPaksa = confirm(
               "❌ Gagal menyimpan:\nPeringatan: Saldo Anda tidak mencukupi/Minus!\n\nApakah Anda ingin tetap menyimpan secara PAKSA?",
             );
-
-            // Jika user memilih Cancel, hentikan submit form detik ini juga
-            if (!konfirmasiPaksa) {
-              return;
-            }
-
-            // Jika user menyetujui, ubah kedua switch saklar boolean menjadi true
+            if (!konfirmasiPaksa) return;
             payload.forceSave = true;
             payload.force_save = true;
           }
@@ -604,13 +566,11 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
         }
       }
-      // ─────────────────────────────────────────────────────────────────────────
 
       try {
         btnSimpan.disabled = true;
         btnSimpan.innerText = "Menyimpan...";
 
-        // Cek mode Update atau Create
         if (idUpdate) {
           if (isPemasukan) await updatePemasukan(idUpdate, payload);
           else await updatePengeluaran(idUpdate, payload);
@@ -630,12 +590,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (inputTanggal) {
           const today = new Date();
-          const yyyy = today.getFullYear();
-          const mm = String(today.getMonth() + 1).padStart(2, "0");
-          const dd = String(today.getDate()).padStart(2, "0");
-          inputTanggal.value = `${yyyy}-${mm}-${dd}`;
+          inputTanggal.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
         }
-
         await muatRiwayatTabel();
       } catch (error) {
         alert("❌ Gagal menyimpan: " + error.message);
@@ -694,11 +650,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       cacheKategoriBawaan.forEach((kat) => {
         const isBawaanSistem =
           kat.userId === "admin" || kat.userId === "SYSTEM";
+        // 💡 SMART OVERRIDE FRONTEND: Jika dia beneran ADMIN, bypass gembok!
+        const isUserAdmin = currentUserRole === "ADMIN";
 
         let aksiTombol = "";
-        if (isBawaanSistem) {
+        if (isBawaanSistem && !isUserAdmin) {
           aksiTombol = `<span class="text-[10px] text-gray-400 italic bg-gray-100 px-2 py-0.5 rounded-md">Bawaan</span>`;
         } else {
+          // Tombol muncul kalau kategori buatan sendiri ATAU akun lu adalah ADMIN kelompok
           aksiTombol = `
             <button type="button" class="btn-edit-kat text-blue-500 hover:text-blue-700 p-1" data-id="${kat.id}" data-name="${kat.name}"><span class="material-symbols-outlined text-[16px] block">edit</span></button>
             <button type="button" class="btn-hapus-kat text-rose-500 hover:text-rose-700 p-1" data-id="${kat.id}"><span class="material-symbols-outlined text-[16px] block">delete</span></button>
@@ -709,8 +668,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           <div class="flex items-center justify-between p-3 bg-white border-b border-gray-50">
             <span class="text-xs font-bold text-gray-700 tracking-wide">${kat.name}</span>
             <div class="flex gap-1 items-center">${aksiTombol}</div>
-          </div>
-        `;
+          </div>`;
       });
 
       document.querySelectorAll(".btn-hapus-kat").forEach((btn) => {
@@ -753,7 +711,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       modalKategori.classList.add("hidden");
       formKategoriModal.reset();
       document.getElementById("txtIdKategoriModal").value = "";
-      btnBatalKat.classList.add("hidden");
+      btnBatalKat.add("hidden");
     };
     btnBatalKat.onclick = () => {
       formKategoriModal.reset();
@@ -773,15 +731,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       const tipe = isPemasukan ? "INCOME" : "EXPENSE";
 
       try {
-        if (id) {
-          await updateKategori(id, { name: nama, type: tipe });
-        } else {
-          await tambahKategori({ name: nama, type: tipe });
-        }
+        if (id) await updateKategori(id, { name: nama, type: tipe });
+        else await tambahKategori({ name: nama, type: tipe });
         formKategoriModal.reset();
         document.getElementById("txtIdKategoriModal").value = "";
         btnBatalKat.classList.add("hidden");
-
         await renderKategoriManager();
       } catch (err) {
         alert("❌ " + err.message);
