@@ -70,6 +70,39 @@ public class UserController {
         }
     }
 
+    @PostMapping("/api/auth/register/verify-otp")
+    public ResponseEntity<UserDto.ApiResponse> verifyRegisterOtp(
+            @RequestBody com.keuangan.app.dto.VerifyOtpRequest request) {
+        try {
+            UserDto.UserResponse data = userService.verifyRegisterOtp(request);
+            return ResponseEntity.ok(new UserDto.ApiResponse(true, "Registrasi berhasil, akun divalidasi.", data));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new UserDto.ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/auth/forgot-password/send-otp")
+    public ResponseEntity<UserDto.ApiResponse> forgotPasswordSendOtp(
+            @RequestBody UserDto.ForgotPasswordRequest request) {
+        try {
+            userService.forgotPasswordSendOtp(request.getUsername());
+            return ResponseEntity.ok(new UserDto.ApiResponse(true, "OTP telah dikirim ke email Anda."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new UserDto.ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/auth/forgot-password/reset")
+    public ResponseEntity<UserDto.ApiResponse> resetPassword(
+            @RequestBody UserDto.ResetPasswordRequest request) {
+        try {
+            userService.resetPassword(request);
+            return ResponseEntity.ok(new UserDto.ApiResponse(true, "Password berhasil direset. Silakan login."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new UserDto.ApiResponse(false, e.getMessage()));
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // USER – PROFIL SENDIRI
     // ─────────────────────────────────────────────────────────────────────────
@@ -92,6 +125,43 @@ public class UserController {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(new UserDto.ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // UPDATE PROFIL & VERIFIKASI OTP – GAYA 2FA MULTI-STEP
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * PUT /api/user/profil
+     * Langkah 1: Request update profil. Jika email berubah, kirim OTP & tahan data di memori.
+     */
+    @PutMapping("/api/user/profil")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<UserDto.ApiResponse> requestUpdateProfil(
+            Authentication auth,
+            @RequestBody UserDto.UpdateProfileRequest request) {
+        try {
+            String pesan = userService.prosesRequestProfil(auth.getName(), request);
+            return ResponseEntity.ok(new UserDto.ApiResponse(true, pesan));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new UserDto.ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    /**
+     * POST /api/user/profil/verify-otp
+     * Langkah 2: Verifikasi OTP + Password via DTO asli kelompokmu untuk save ke MySQL.
+     */
+    @PostMapping("/api/user/profil/verify-otp")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<UserDto.ApiResponse> finalisgGantiEmail(
+            @RequestBody com.keuangan.app.dto.VerifyOtpRequest request) {
+        try {
+            UserDto.UserResponse data = userService.verifikasiDanSaveProfil(request);
+            return ResponseEntity.ok(new UserDto.ApiResponse(true, "Profil dan email baru Anda sukses diperbarui!", data));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(new UserDto.ApiResponse(false, e.getMessage()));
         }
     }
 

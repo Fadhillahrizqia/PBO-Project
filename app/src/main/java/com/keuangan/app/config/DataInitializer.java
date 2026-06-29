@@ -11,6 +11,8 @@ import com.keuangan.app.model.User;
 import com.keuangan.app.repository.CategoryRepository;
 import com.keuangan.app.repository.UserRepository;
 
+import java.util.List;
+
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -30,7 +32,6 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         System.out.println("DataInitializer dijalankan...");
 
-        // 1. SEEDING USER ADMIN
         if (userRepository.count() == 0) {
             User admin = new User();
             admin.setUsername("admin");
@@ -43,34 +44,58 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("Admin default berhasil dibuat.");
         }
 
-        // 2. SEEDING KATEGORI MASTER (Menggunakan Helper Method Anti-Skip)
         System.out.println("Memeriksa data master kategori...");
         
-        // Kategori Pengeluaran (EXPENSE)
-        ensureCategoryExists("MAKANAN", "EXPENSE");
-        ensureCategoryExists("TRANSPORTASI", "EXPENSE");
-        ensureCategoryExists("HIBURAN", "EXPENSE");
-        ensureCategoryExists("TAGIHAN", "EXPENSE");
-        ensureCategoryExists("LAINNYA_PENGELUARAN", "EXPENSE");
+        List<Category> allCategories = categoryRepository.findAll();
 
-        // Kategori Pemasukan (INCOME)
-        ensureCategoryExists("UANG_SAKU", "INCOME");
-        ensureCategoryExists("GAJI_PART_TIME", "INCOME");
-        ensureCategoryExists("FREELANCE", "INCOME");
-        ensureCategoryExists("BONUS", "INCOME");
-        ensureCategoryExists("LAINNYA_PEMASUKAN", "INCOME");
+        ensureCategoryExists(allCategories, "MAKANAN", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "TRANSPORTASI", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "BELAJAR", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "KOST", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "HIBURAN", "EXPENSE", "admin");
+        ensureCategoryExists(allCategories, "TAGIHAN", "EXPENSE", "admin");
+
+        ensureCategoryExists(allCategories, "UANG SAKU", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "GAJI PART TIME", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "FREELANCE", "INCOME", "admin");
+        ensureCategoryExists(allCategories, "BONUS", "INCOME", "admin");
 
         System.out.println("Data master kategori aman terkendali!");
     }
 
-    /**
-     * 💡 HELPER METHOD: Berfungsi untuk mengecek kategori satu per satu ke database.
-     * Jika belum ada, baru akan disimpan. Jika sudah ada, akan dilewati tanpa bikin crash.
-     */
-    private void ensureCategoryExists(String name, String type) {
-        if (categoryRepository.findByNameIgnoreCaseAndType(name, type).isEmpty()) {
-            categoryRepository.save(new Category(name, type));
+    private void ensureCategoryExists(List<Category> existingCategories, String name, String type, String userId) {
+        Category existing = existingCategories.stream()
+                .filter(c -> c.getName() != null && c.getName().equalsIgnoreCase(name))
+                .findFirst()
+                .orElse(null);
+
+        if (existing == null) {
+            // Kondisi A: Jika benar-benar belum ada di database, lakukan INSERT baru
+            categoryRepository.save(new Category(name, type, userId));
             System.out.println("Kategori baru berhasil ditambahkan: " + name + " (" + type + ")");
+        } else {
+            // Kondisi B: Jika namanya sudah ada, lakukan DATA HEALING jika isinya belum standar admin
+            boolean perluUpdate = false;
+
+            // Perbaiki userId jika masih null atau bukan "admin"
+            if (existing.getUserId() == null || !existing.getUserId().equals(userId)) {
+                existing.setUserId(userId);
+                perluUpdate = true;
+            }
+
+            // Perbaiki type jika masih null atau tidak sesuai (misal INCOME/EXPENSE tertukar)
+            if (existing.getType() == null || !existing.getType().equalsIgnoreCase(type)) {
+                existing.setType(type);
+                perluUpdate = true;
+            }
+
+            // Eksekusi update ke database jika ada data yang diperbaiki
+            if (perluUpdate) {
+                categoryRepository.save(existing);
+                System.out.println("Data lama disinkronisasi (UserId/Type di-update): " + name);
+            } else {
+                System.out.println("Kategori dilewati (Sudah sesuai standar): " + name);
+            }
         }
     }
 }

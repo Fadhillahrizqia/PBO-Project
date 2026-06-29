@@ -10,17 +10,21 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(nullable = false, length = 50)
     private String name;
 
     @Column(nullable = false, length = 20)
     private String type; // "EXPENSE" atau "INCOME"
 
+    @Column(name = "user_id", nullable = false)
+    private String userId;
+
     public Category() {}
 
-    public Category(String name, String type) {
+    public Category(String name, String type, String userId) {
         this.name = name;
         this.type = type;
+        this.userId = userId;
     }
 
     public Long getId() { return id; }
@@ -29,4 +33,6 @@ public class Category {
     public void setName(String name) { this.name = name; }
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 }

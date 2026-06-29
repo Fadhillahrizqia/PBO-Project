@@ -39,6 +39,29 @@ public class UserDto {
         public void setStatus(String s)     { this.status = s; }
     }
 
+    // ── Lupa Password ─────────────────────────────────────────────────────────
+    public static class ForgotPasswordRequest {
+        private String username;
+
+        public ForgotPasswordRequest() {}
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+    }
+
+    public static class ResetPasswordRequest {
+        private String username;
+        private String otp;
+        private String newPassword;
+
+        public ResetPasswordRequest() {}
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getOtp() { return otp; }
+        public void setOtp(String otp) { this.otp = otp; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // RESPONSE DTOs
     // ─────────────────────────────────────────────────────────────────────────
@@ -106,5 +129,18 @@ public class UserDto {
 
         public Object  getData()            { return data; }
         public void    setData(Object d)    { this.data = d; }
+    }
+
+    // Tambahkan class ini di dalam public class UserDto kalian, bro
+    public static class UpdateProfileRequest {
+        private String email;
+        private String namaLengkap;
+
+        // Getters & Setters
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+
+        public String getNamaLengkap() { return namaLengkap; }
+        public void setNamaLengkap(String namaLengkap) { this.namaLengkap = namaLengkap; }
     }
 }

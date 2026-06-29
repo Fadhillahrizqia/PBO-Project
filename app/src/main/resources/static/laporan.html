@@ -1,25 +1,27 @@
-﻿<!doctype html>
-<html lang="en">
+<!doctype html>
+<html lang="id">
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Laporan - FinanceBuddy</title>
+    <title>Laporan Tahunan - FinanceBuddy</title>
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700&display=swap"
       rel="stylesheet"
     />
     <link
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1"
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#366758" />
+    <link rel="apple-touch-icon" href="/assets/icons/icon-1.png" />
   </head>
   <body class="bg-[#faf9f8] text-[#1a1c1c] font-sans antialiased">
     <div class="relative flex min-h-screen w-full flex-col lg:flex-row">
-      <!-- Sidebar Navigation -->
       <nav
         class="hidden md:flex flex-col py-6 px-4 bg-white shadow-sm h-screen w-64 fixed left-0 top-0 z-20"
       >
@@ -64,9 +66,8 @@
             <span class="material-symbols-outlined text-[20px]">payments</span>
             Pengeluaran
           </a>
-          <!-- Laporan Aktif (Hijau Khas) -->
           <a
-            class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#366758] font-bold bg-[#b5ead7]/20 border-r-4 border-[#366758] transition-colors"
+            class="flex items-center gap-3 px-4 py-3 rounded-lg text-[#366758] font-bold bg-[#b5ead7]/20 border-r-4 border-[#366758]"
             href="laporan.html"
           >
             <span class="material-symbols-outlined text-[20px]"
@@ -84,102 +85,348 @@
         </div>
         <button
           id="btnLogout"
-          class="text-left flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
+          class="w-full text-left flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors"
         >
           <span class="material-symbols-outlined text-[20px]">logout</span>
           Logout
         </button>
       </nav>
 
-      <!-- Main Content -->
-      <main class="flex-1 md:ml-64 p-6 space-y-6">
-        <header class="flex items-center justify-between border-b pb-4">
-          <h2 class="text-[24px] font-semibold">Laporan Tahunan</h2>
+      <main class="flex-1 md:ml-64 p-6 space-y-6 pb-24 relative">
+        <header class="pb-2">
+          <h2 class="text-[24px] font-bold text-gray-800 tracking-tight">
+            Detail Laporan
+          </h2>
         </header>
 
-        <!-- 3 Kartu Akumulasi Tahunan -->
+        <div
+          class="bg-white p-5 rounded-[24px] border border-gray-100 shadow-sm flex flex-col xl:flex-row gap-4 items-start xl:items-end justify-between"
+        >
+          <div class="flex flex-col md:flex-row gap-4 w-full xl:w-auto">
+            <div>
+              <label class="block text-[11px] font-semibold text-gray-500 mb-1"
+                >Pilih Tahun</label
+              >
+              <select
+                id="filterTahun"
+                class="w-full md:w-32 px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:ring-[#366758] focus:border-[#366758] font-semibold text-gray-700"
+              ></select>
+            </div>
+
+            <div
+              class="flex flex-col sm:flex-row items-start sm:items-center gap-2"
+            >
+              <div>
+                <label
+                  class="block text-[11px] font-semibold text-gray-500 mb-1"
+                  >Mulai Tanggal</label
+                >
+                <input
+                  type="date"
+                  id="filterTglMulai"
+                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#366758] focus:ring-1 focus:ring-[#366758]"
+                />
+              </div>
+              <span class="text-gray-400 mt-0 sm:mt-5 hidden sm:block">-</span>
+              <div>
+                <label
+                  class="block text-[11px] font-semibold text-gray-500 mb-1"
+                  >Sampai Tanggal</label
+                >
+                <input
+                  type="date"
+                  id="filterTglSelesai"
+                  class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:border-[#366758] focus:ring-1 focus:ring-[#366758]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-2 w-full xl:w-auto mt-2 xl:mt-0">
+            <button
+              id="btnResetFilter"
+              class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-xs rounded-xl transition-all w-full sm:w-auto"
+            >
+              Reset
+            </button>
+            <button
+              id="btnTerapkanFilter"
+              class="px-5 py-2 bg-[#366758] hover:bg-[#1c4f41] text-white font-semibold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-1 w-full sm:w-auto"
+            >
+              <span class="material-symbols-outlined text-[16px]"
+                >filter_alt</span
+              >
+              Terapkan Filter
+            </button>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div
-            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm"
+            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm relative flex flex-col justify-between min-h-[140px]"
           >
-            <p class="text-xs text-gray-500">Total Pemasukan Tahunan</p>
-            <h3 id="lblTotalIncome" class="text-[24px] font-bold mt-2">Rp 0</h3>
-          </div>
-          <div
-            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm"
-          >
-            <p class="text-xs text-gray-500">Total Pengeluaran Tahunan</p>
-            <h3 id="lblTotalExpense" class="text-[24px] font-bold mt-2">
-              Rp 0
-            </h3>
-          </div>
-          <div
-            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm"
-          >
-            <p class="text-xs text-gray-500">Tabungan Bersih</p>
-            <h3
-              id="lblNetSavings"
-              class="text-[24px] font-bold text-[#366758] mt-2"
+            <div
+              class="flex items-center gap-2 text-gray-400 text-xs font-semibold"
             >
-              Rp 0
-            </h3>
+              <span
+                class="material-symbols-outlined text-[16px] text-emerald-500 bg-emerald-50 p-1 rounded-lg"
+                >trending_up</span
+              >
+              Total Pemasukan
+            </div>
+            <div class="mt-2">
+              <h3
+                id="txtTotalLapIn"
+                class="text-[28px] font-bold text-gray-900 leading-none"
+              >
+                Rp 0
+              </h3>
+              <p
+                id="lblTahunPemasukan"
+                class="text-[10px] text-gray-400 mt-2 font-medium uppercase"
+              >
+                Periode Aktif
+              </p>
+            </div>
           </div>
-        </div>
 
-        <!-- Grafik Histogram Batang -->
-        <div
-          class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm"
-        >
-          <h4 class="font-semibold text-sm mb-4">
-            Perbandingan Pemasukan vs Pengeluaran
-          </h4>
-          <div class="h-64"><canvas id="chartBatangLaporan"></canvas></div>
-        </div>
-
-        <!-- Distribusi & Tombol Cetak Dokumen -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div
-            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm"
+            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm relative flex flex-col justify-between min-h-[140px]"
           >
-            <h4 class="font-semibold text-sm mb-4">
-              Distribusi Pengeluaran Tahunan
-            </h4>
-            <div class="h-56"><canvas id="chartDonatTahunan"></canvas></div>
+            <div
+              class="flex items-center gap-2 text-gray-400 text-xs font-semibold"
+            >
+              <span
+                class="material-symbols-outlined text-[16px] text-rose-500 bg-rose-50 p-1 rounded-lg"
+                >trending_down</span
+              >
+              Total Pengeluaran
+            </div>
+            <div class="mt-2">
+              <h3
+                id="txtTotalLapOut"
+                class="text-[28px] font-bold text-gray-900 leading-none"
+              >
+                Rp 0
+              </h3>
+              <p
+                id="lblTahunPengeluaran"
+                class="text-[10px] text-gray-400 mt-2 font-medium uppercase"
+              >
+                Periode Aktif
+              </p>
+            </div>
           </div>
+
           <div
-            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm flex flex-col justify-between"
+            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm relative flex flex-col justify-between min-h-[140px]"
           >
-            <h4 class="font-semibold text-sm mb-4">Ringkasan Statistik</h4>
-            <div class="space-y-4 flex-1 flex flex-col justify-center">
-              <div class="flex justify-between border-b pb-2 text-sm">
-                <span>Kategori Terbesar</span
-                ><span class="font-bold text-[#366758]">Makanan</span>
-              </div>
-              <div class="flex justify-between border-b pb-2 text-sm">
-                <span>Rata-rata Pemasukan Bulanan</span
-                ><span class="font-bold text-gray-700" id="lblAvgIncome"
-                  >Rp 0</span
+            <div
+              class="flex items-center gap-2 text-gray-400 text-xs font-semibold"
+            >
+              <span
+                class="material-symbols-outlined text-[16px] text-indigo-500 bg-indigo-50 p-1 rounded-lg"
+                >savings</span
+              >
+              Tabungan Bersih
+            </div>
+            <div class="mt-2">
+              <h3
+                id="txtTotalLapNet"
+                class="text-[28px] font-bold text-gray-900 leading-none"
+              >
+                Rp 0
+              </h3>
+              <div class="mt-2">
+                <span
+                  id="lblNetBadge"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700"
+                  >Calculated</span
                 >
               </div>
             </div>
-            <button
-              onclick="window.print()"
-              class="w-full py-2.5 mt-4 bg-[#366758] text-white font-semibold rounded-xl hover:bg-[#1c4f41] transition-colors shadow-sm flex items-center justify-center gap-2"
-            >
-              <span class="material-symbols-outlined text-[18px]"
-                >download</span
-              >
-              Download Laporan (PDF)
-            </button>
           </div>
+        </div>
+
+        <div
+          class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm"
+        >
+          <h4 class="font-bold text-sm text-gray-800 mb-4 tracking-tight">
+            Perbandingan Pemasukan vs Pengeluaran
+          </h4>
+          <div class="h-64">
+            <canvas id="chartPerbandinganBulanan"></canvas>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div
+            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm"
+          >
+            <h4 class="font-bold text-sm text-gray-800 mb-4 tracking-tight">
+              Distribusi Pengeluaran
+            </h4>
+            <div
+              class="h-60 flex flex-col items-center justify-center relative"
+            >
+              <canvas id="chartStrukturGabungan"></canvas>
+            </div>
+          </div>
+
+          <div
+            class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm space-y-4"
+          >
+            <h4 class="font-bold text-sm text-gray-800 tracking-tight">
+              Ringkasan Statistik
+            </h4>
+
+            <div class="space-y-3">
+              <div
+                class="flex items-center justify-between p-3.5 bg-gray-50/70 rounded-2xl border border-gray-100/50"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"
+                  >
+                    <span class="material-symbols-outlined text-[20px]"
+                      >calendar_month</span
+                    >
+                  </div>
+                  <p class="text-xs text-gray-500 font-medium">
+                    Bulan dengan Pengeluaran Tertinggi
+                  </p>
+                </div>
+                <p id="lblStatBulanMax" class="text-xs font-bold text-gray-800">
+                  Menghitung...
+                </p>
+              </div>
+
+              <div
+                class="flex items-center justify-between p-3.5 bg-gray-50/70 rounded-2xl border border-gray-100/50"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center"
+                  >
+                    <span class="material-symbols-outlined text-[20px]"
+                      >pie_chart</span
+                    >
+                  </div>
+                  <p class="text-xs text-gray-500 font-medium">
+                    Kategori Terbesar
+                  </p>
+                </div>
+                <p
+                  id="lblStatKategoriMax"
+                  class="text-xs font-bold text-gray-800"
+                >
+                  Menghitung...
+                </p>
+              </div>
+
+              <div
+                class="flex items-center justify-between p-3.5 bg-gray-50/70 rounded-2xl border border-gray-100/50"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"
+                  >
+                    <span class="material-symbols-outlined text-[20px]"
+                      >arrow_upward</span
+                    >
+                  </div>
+                  <p class="text-xs text-gray-500 font-medium">
+                    Rata-rata Pemasukan Bulanan
+                  </p>
+                </div>
+                <p id="lblStatAvgIn" class="text-xs font-bold text-gray-800">
+                  Rp 0
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button
+            id="btnCetakLaporan"
+            class="px-6 py-3 bg-[#1e463a] hover:bg-[#132e26] text-white font-semibold text-xs rounded-xl shadow-md inline-flex items-center gap-2 transition-all duration-150"
+          >
+            <span class="material-symbols-outlined text-[16px]">download</span>
+            Download Laporan (PDF)
+          </button>
         </div>
       </main>
     </div>
 
     <script type="module" src="js/laporan.js"></script>
-    <script type="module">
-      import { logout } from "./js/api.js";
-      document.getElementById("btnLogout").addEventListener("click", logout);
-    </script>
+    <script src="js/pwa.js" defer></script>
+
+    <!-- ── Mobile Bottom Navbar ────────────────────────────────────────── -->
+    <nav id="mobileBottomNav" class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+      <div class="flex items-stretch h-16">
+        <a href="dashboard.html" class="mob-nav-item" title="Dashboard">
+          <span class="material-symbols-outlined">dashboard</span>
+          <span>Beranda</span>
+        </a>
+        <a href="pemasukan.html" class="mob-nav-item" title="Pemasukan">
+          <span class="material-symbols-outlined">savings</span>
+          <span>Masuk</span>
+        </a>
+        <a href="pengeluaran.html" class="mob-nav-item" title="Pengeluaran">
+          <span class="material-symbols-outlined">payments</span>
+          <span>Keluar</span>
+        </a>
+        <a href="laporan.html" class="mob-nav-item active" title="Laporan">
+          <span class="material-symbols-outlined">bar_chart</span>
+          <span>Laporan</span>
+        </a>
+        <a href="profil.html" class="mob-nav-item" title="Profil">
+          <span class="material-symbols-outlined">person</span>
+          <span>Profil</span>
+        </a>
+      </div>
+    </nav>
+
+    <style>
+      .mob-nav-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        text-decoration: none;
+        color: #9ca3af;
+        font-size: 10px;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        transition: color 0.18s;
+        padding: 6px 4px;
+        position: relative;
+      }
+      .mob-nav-item .material-symbols-outlined {
+        font-size: 22px;
+        transition: transform 0.18s, color 0.18s;
+      }
+      .mob-nav-item:hover,
+      .mob-nav-item.active {
+        color: #366758;
+      }
+      .mob-nav-item.active .material-symbols-outlined {
+        font-variation-settings: 'FILL' 1;
+        transform: translateY(-2px);
+      }
+      .mob-nav-item.active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 20%;
+        right: 20%;
+        height: 2.5px;
+        background: #366758;
+        border-radius: 0 0 4px 4px;
+      }
+    </style>
   </body>
 </html>

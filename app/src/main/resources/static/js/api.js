@@ -52,7 +52,7 @@ function buildHeaders(withAuth = true) {
  * @returns {Promise<any>}   - parsed JSON body
  */
 async function request(endpoint, options = {}) {
-  // 💡 SINKRONISASI: Menghindari penumpukan jika BASE_URL diisi di kemudian hari
+  // SINKRONISASI: Menghindari penumpukan jika BASE_URL diisi di kemudian hari
   const url = `${BASE_URL}${endpoint}`;
   const response = await fetch(url, options);
 
@@ -64,6 +64,16 @@ async function request(endpoint, options = {}) {
   }
 
   if (!response.ok) {
+    // FIX: PROTEKSI AUTO-LOGOUT JIKA TOKEN EXPIRED (401 UNAUTHORIZED)
+    if (response.status === 401) {
+      alert(
+        "⚠️ Sesi Anda telah berakhir atau token tidak valid. Silakan login kembali.",
+      );
+      clearToken();
+      window.location.href = "/index.html";
+      return;
+    }
+
     // Spring Boot sering mengembalikan { message: "..." } pada error
     const message =
       (body && (body.message || body.error)) ||
@@ -118,6 +128,30 @@ export async function register(payload) {
   });
 }
 
+export async function verifyRegisterOtp(username, otp) {
+  return request("/api/auth/register/verify-otp", {
+    method: "POST",
+    headers: buildHeaders(false),
+    body: JSON.stringify({ username, otp }),
+  });
+}
+
+export async function sendForgotPasswordOtp(username) {
+  return request("/api/auth/forgot-password/send-otp", {
+    method: "POST",
+    headers: buildHeaders(false),
+    body: JSON.stringify({ username }),
+  });
+}
+
+export async function resetPassword(username, otp, newPassword) {
+  return request("/api/auth/forgot-password/reset", {
+    method: "POST",
+    headers: buildHeaders(false),
+    body: JSON.stringify({ username, otp, newPassword }),
+  });
+}
+
 // ─── USER / PROFIL ────────────────────────────────────────────────────────────
 
 /**
@@ -125,9 +159,36 @@ export async function register(payload) {
  * @returns {Promise<{ id, username, email, namaLengkap, role, tervalidasi }>}
  */
 export async function getProfil() {
-  return request("/user/profil", {
+  return request("/api/user/profil", {
     method: "GET",
     headers: buildHeaders(),
+  });
+}
+
+/**
+ * Memperbarui data profil (Nama & Email) langsung ke database MySQL.
+ * @param {{ namaLengkap: string, email: string }} payload
+ */
+export async function updateProfil(payload) {
+  return request("/api/user/profil", {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Memverifikasi OTP profil menggunakan DTO asli VerifyOtpRequest kelompokmu
+ */
+export async function verifyProfileOtp(usernameStr, passwordStr, otpStr) {
+  return request("/api/user/profil/verify-otp", {
+    method: "POST",
+    headers: buildHeaders(),
+    body: JSON.stringify({
+      username: usernameStr,
+      password: passwordStr,
+      otp: otpStr,
+    }),
   });
 }
 
@@ -154,6 +215,35 @@ export async function validasiUser(userId) {
   });
 }
 
+// ─── KATEGORI ─────────────────────────────────────────────────────────────────
+
+export async function getKategori() {
+  return request("/api/categories", { method: "GET", headers: buildHeaders() });
+}
+
+export async function tambahKategori(payload) {
+  return request("/api/categories", {
+    method: "POST",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateKategori(id, payload) {
+  return request(`/api/categories/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteKategori(id) {
+  return request(`/api/categories/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(),
+  });
+}
+
 // ─── PEMASUKAN ────────────────────────────────────────────────────────────────
 
 /**
@@ -167,6 +257,21 @@ export async function tambahPemasukan(payload) {
     method: "POST",
     headers: buildHeaders(),
     body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePemasukan(id, payload) {
+  return request(`/api/transaksi/pemasukan/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePemasukan(id) {
+  return request(`/api/transaksi/pemasukan/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(),
   });
 }
 
@@ -202,6 +307,21 @@ export async function tambahPengeluaran(payload) {
     method: "POST",
     headers: buildHeaders(),
     body: JSON.stringify(payload),
+  });
+}
+
+export async function updatePengeluaran(id, payload) {
+  return request(`/api/transaksi/pengeluaran/${id}`, {
+    method: "PUT",
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePengeluaran(id) {
+  return request(`/api/transaksi/pengeluaran/${id}`, {
+    method: "DELETE",
+    headers: buildHeaders(),
   });
 }
 

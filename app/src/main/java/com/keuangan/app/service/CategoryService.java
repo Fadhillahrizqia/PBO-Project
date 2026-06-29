@@ -16,37 +16,39 @@ public class CategoryService {
     private CategoryRepository categoryRepository;
 
     @Transactional(readOnly = true)
-    public List<Category> getCategories(String type) {
-        if (type != null && !type.trim().isEmpty()) {
-            return categoryRepository.findAllByType(type.toUpperCase());
-        }
-        return categoryRepository.findAll();
+    public List<Category> getCategories(String userId) {
+        // 💡 Sekarang mengambil data milik user + data master dari SYSTEM
+        return categoryRepository.findAllByUserIdOrSystem(userId);
     }
 
-    public Category createCategory(CategoryRequest req) {
-        if (categoryRepository.existsByNameIgnoreCase(req.getName().trim())) {
-            throw new IllegalArgumentException("Nama kategori '" + req.getName() + "' sudah digunakan");
+    public Category createCategory(CategoryRequest req, String userId) {
+        if (categoryRepository.existsByNameTypeAndUserOrSystem(req.getName().trim(), req.getType(), userId)) {
+            throw new IllegalArgumentException("Kategori '" + req.getName() + "' sudah tersedia");
         }
-        Category category = new Category(req.getName().trim(), req.getType().toUpperCase());
+        Category category = new Category(req.getName().trim().toUpperCase(), req.getType().toUpperCase(), userId);
         return categoryRepository.save(category);
     }
 
-    public Category updateCategory(Long id, CategoryRequest req) {
+    public Category updateCategory(Long id, CategoryRequest req, String userId) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Kategori tidak ditemukan"));
         
-        if (!category.getName().equalsIgnoreCase(req.getName()) && categoryRepository.existsByNameIgnoreCase(req.getName())) {
-            throw new IllegalArgumentException("Nama kategori sudah digunakan");
+        // 💡 CEK KEPEMILIKAN
+        if (!category.getUserId().equals(userId)) {
+            throw new SecurityException("Akses ditolak: Ini bukan kategori Anda.");
         }
         
-        category.setName(req.getName().trim());
-        category.setType(req.getType().toUpperCase());
+        category.setName(req.getName().trim().toUpperCase());
+        // Tipe (INCOME/EXPENSE) sebaiknya tidak diubah agar riwayat transaksi tidak rusak
         return categoryRepository.save(category);
     }
 
-    public void deleteCategory(Long id) {
-        if (!categoryRepository.existsById(id)) {
-            throw new IllegalArgumentException("Kategori tidak ditemukan");
+    public void deleteCategory(Long id, String userId) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Kategori tidak ditemukan"));
+
+        if (!category.getUserId().equals(userId)) {
+            throw new SecurityException("Akses ditolak: Ini bukan kategori Anda.");
         }
         categoryRepository.deleteById(id);
     }
