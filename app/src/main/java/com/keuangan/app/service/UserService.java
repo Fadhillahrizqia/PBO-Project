@@ -42,51 +42,44 @@ public class UserService {
      */
     public UserDto.UserResponse daftarAkun(RegisterRequest req) {
 
-        // Validasi input tidak boleh kosong
         if (isBlank(req.getUsername()) || isBlank(req.getEmail())
                 || isBlank(req.getPassword()) || isBlank(req.getNamaLengkap())) {
             throw new IllegalArgumentException("Semua field wajib diisi.");
         }
 
-        // Cek duplikat username
         if (userRepository.existsByUsername(req.getUsername().trim())) {
             throw new IllegalArgumentException(
                     "Username '" + req.getUsername() + "' sudah digunakan.");
         }
 
-        // Cek duplikat email
         if (userRepository.existsByEmail(req.getEmail().trim().toLowerCase())) {
             throw new IllegalArgumentException(
                     "Email '" + req.getEmail() + "' sudah terdaftar.");
         }
 
-        // Validasi panjang password minimal 8 karakter
         if (req.getPassword().length() < 8) {
             throw new IllegalArgumentException("Password minimal 8 karakter.");
         }
 
-        // Buat entitas user baru
         User user = new User();
         user.setUsername(req.getUsername().trim());
         user.setEmail(req.getEmail().trim().toLowerCase());
         user.setPassword(passwordEncoder.encode(req.getPassword()));
         user.setNamaLengkap(req.getNamaLengkap().trim());
 
-        // WAJIB SET MANUAL BIAR GA NULL DI DATABASE
         user.setRole(com.keuangan.app.enums.UserRole.USER);
         user.setStatus(com.keuangan.app.enums.UserStatus.BELUM_TERVALIDASI);
 
-        // Jaga-jaga agar createdAt tidak null sebelum @PrePersist dipanggil
         user.setCreatedAt(java.time.LocalDateTime.now());
 
         User tersimpan = userRepository.save(user);
 
-        // Bungkus pengiriman OTP agar kalau Resend-nya error, tidak melempar HTTP 500
+        // Aman: Dibungkus try-catch agar jika SMTP Brevo gagal/gantung, registrasi
+        // tetap sukses
         try {
             otpService.generateAndSend(tersimpan.getUsername(), tersimpan.getEmail());
         } catch (Exception e) {
-            System.err.println("⚠️ Gagal mengirim email OTP via Resend: " + e.getMessage());
-            // Aplikasi dibiarkan terus berjalan tanpa crash
+            System.err.println("⚠️ Gagal mengirim email OTP Registrasi via SMTP Brevo: " + e.getMessage());
         }
 
         return toResponse(tersimpan);
@@ -109,7 +102,6 @@ public class UserService {
     }
 
     public void forgotPasswordSendOtp(String usernameOrEmail) {
-        // Cari user berdasarkan username atau email
         User user = userRepository.findByUsername(usernameOrEmail).orElse(null);
         if (user == null) {
             user = userRepository.findByEmail(usernameOrEmail)
@@ -117,7 +109,13 @@ public class UserService {
                             () -> new IllegalArgumentException("User tidak ditemukan dengan identifier tersebut."));
         }
 
-        otpService.generateAndSend(user.getUsername(), user.getEmail());
+        // Aman: Dibungkus try-catch agar tidak menyebabkan error 500 / timeout saat
+        // lupa password
+        try {
+            otpService.generateAndSend(user.getUsername(), user.getEmail());
+        } catch (Exception e) {
+            System.err.println("⚠️ Gagal mengirim email OTP Lupa Password via SMTP Brevo: " + e.getMessage());
+        }
     }
 
     public void resetPassword(UserDto.ResetPasswordRequest req) {
@@ -140,10 +138,6 @@ public class UserService {
     // ADMIN – MANAJEMEN USER
     // ─────────────────────────────────────────────────────────────────────────
 
-    /**
-     * Admin: ubah status user (TERVALIDASI atau DITOLAK).
-     * Hanya endpoint ini yang boleh mengubah status; user biasa tidak bisa.
-     */
     public UserDto.UserResponse validasiUser(Long userId, UserDto.ValidasiRequest req) {
 
         User user = userRepository.findById(userId)
@@ -158,7 +152,6 @@ public class UserService {
                     "Status tidak valid. Gunakan: TERVALIDASI atau DITOLAK.");
         }
 
-        // Tidak boleh mengubah kembali ke BELUM_TERVALIDASI lewat endpoint ini
         if (statusBaru == UserStatus.BELUM_TERVALIDASI) {
             throw new IllegalArgumentException(
                     "Status tidak bisa diubah ke BELUM_TERVALIDASI.");
@@ -166,7 +159,6 @@ public class UserService {
 
         user.setStatus(statusBaru);
 
-        // Catat waktu validasi jika disetujui
         if (statusBaru == UserStatus.TERVALIDASI) {
             user.setValidatedAt(LocalDateTime.now());
         } else {
@@ -176,9 +168,6 @@ public class UserService {
         return toResponse(userRepository.save(user));
     }
 
-    /**
-     * Admin: ambil semua user yang menunggu validasi.
-     */
     @Transactional(readOnly = true)
     public List<UserDto.UserResponse> getUserMenungguValidasi() {
         return userRepository.findAllByStatus(UserStatus.BELUM_TERVALIDASI)
@@ -187,9 +176,6 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Admin: ambil semua user terdaftar.
-     */
     @Transactional(readOnly = true)
     public List<UserDto.UserResponse> semuaUser() {
         return userRepository.findAll()
@@ -198,9 +184,6 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Admin: ambil detail satu user berdasarkan ID.
-     */
     @Transactional(readOnly = true)
     public UserDto.UserResponse getUserById(Long userId) {
         User user = userRepository.findById(userId)
@@ -213,12 +196,8 @@ public class UserService {
     // PROFIL USER & IN-MEMORY OTP TRACKER
     // ─────────────────────────────────────────────────────────────────────────
 
-    // Struktur data penampung memori sementara (Mirip arsitektur OtpService kalian)
     private final java.util.Map<String, UserDto.UpdateProfileRequest> pendingProfilStore = new java.util.concurrent.ConcurrentHashMap<>();
 
-    /**
-     * Ambil profil user berdasarkan username (dari JWT Principal).
-     */
     @Transactional(readOnly = true)
     public UserDto.UserResponse getProfilByUsername(String username) {
         User user = userRepository.findByUsername(username)
@@ -226,10 +205,6 @@ public class UserService {
         return toResponse(user);
     }
 
-    /**
-     * Memproses request awal profil. Jika ganti email, trigger OtpService
-     * kelompokmu.
-     */
     public String prosesRequestProfil(String username, UserDto.UpdateProfileRequest dto) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("User tidak ditemukan."));
@@ -241,59 +216,50 @@ public class UserService {
 
         String emailBaru = dto.getEmail().trim().toLowerCase();
 
-        // Skenario A: Jika email berubah, lakukan validasi ganda & kirim OTP
         if (!emailBaru.equals(user.getEmail())) {
             if (userRepository.existsByEmail(emailBaru)) {
                 throw new IllegalArgumentException("Email sudah terdaftar oleh pengguna lain.");
             }
 
-            // Tahan perubahan di memori sementara agar tidak langsung bocor/terganti ke
-            // MySQL
             pendingProfilStore.put(username, dto);
 
-            // Panggil OtpService asli milik kelompokmu!
-            otpService.generateAndSend(username, emailBaru);
+            // Aman: Dibungkus try-catch agar update nama/email di frontend tidak macet
+            // total
+            try {
+                otpService.generateAndSend(username, emailBaru);
+            } catch (Exception e) {
+                System.err.println("⚠️ Gagal mengirim email OTP Update Profil via SMTP Brevo: " + e.getMessage());
+            }
             return "OTP_REQUIRED: Kode verifikasi telah dikirim ke email baru Anda.";
         }
 
-        // Skenario B: Email sama (cuma ganti nama), langsung bypass write ke MySQL
-        // tanpa OTP
         user.setNamaLengkap(dto.getNamaLengkap().trim());
         userRepository.save(user);
         return "Profil Anda berhasil diperbarui.";
     }
 
-    /**
-     * Validasi OTP + Password menggunakan DTO asli milik kelompokmu, lalu tulis ke
-     * MySQL.
-     */
     public UserDto.UserResponse verifikasiDanSaveProfil(com.keuangan.app.dto.VerifyOtpRequest req) {
-        // 1. Validasi kecocokan OTP via OtpService kalian
         if (!otpService.verify(req.getUsername(), req.getOtp())) {
             throw new IllegalArgumentException("Kode OTP tidak valid atau sudah kedaluwarsa.");
         }
 
-        // 2. Ambil entity user asli dari MySQL
         User user = userRepository.findByUsername(req.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User tidak ditemukan."));
 
-        // 3. Validasi Password saat ini demi keamanan 2FA akun
         if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Password yang Anda masukkan salah.");
         }
 
-        // 4. Ambil data perubahan yang ditahan di memori sementara tadi
         UserDto.UpdateProfileRequest dataPending = pendingProfilStore.get(req.getUsername());
         if (dataPending == null) {
             throw new IllegalArgumentException("Sesi pembaruan kadaluwarsa, silakan submit ulang form.");
         }
 
-        // 5. Tulis permanen data baru ke MySQL
         user.setNamaLengkap(dataPending.getNamaLengkap().trim());
         user.setEmail(dataPending.getEmail().trim().toLowerCase());
 
         User userTersimpan = userRepository.save(user);
-        pendingProfilStore.remove(req.getUsername()); // Bersihkan ram memori
+        pendingProfilStore.remove(req.getUsername());
 
         return toResponse(userTersimpan);
     }
@@ -309,7 +275,6 @@ public class UserService {
     // HELPER
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** Konversi entitas User → DTO respons (tanpa mengekspos password). */
     private UserDto.UserResponse toResponse(User user) {
         UserDto.UserResponse resp = new UserDto.UserResponse();
         resp.setId(user.getId());
