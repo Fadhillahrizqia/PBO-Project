@@ -1,13 +1,12 @@
 package com.keuangan.app.service;
 
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.internet.MimeMessage;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -17,11 +16,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class OtpService {
 
-    @Value("${resend.api.key}")
-    private String resendApiKey;
+    @Value("${spring.mail.username}")
+    private String fromEmail;
 
+    private final JavaMailSender mailSender;
     private final Map<String, OtpEntry> otpStore = new ConcurrentHashMap<>();
     private final SecureRandom random = new SecureRandom();
+
+    public OtpService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
 
     public void generateAndSend(String username, String email) {
         String otp = String.format("%06d", random.nextInt(999999));
@@ -43,17 +47,16 @@ public class OtpService {
 
     private void sendEmail(String toEmail, String otp) {
         try {
-            Resend resend = new Resend(resendApiKey);
-            CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("FinanceBuddy <onboarding@resend.dev>")
-                .to(toEmail)
-                .subject("Kode OTP FinanceBuddy")
-                .html(buildEmailHtml(otp))
-                .build();
-            CreateEmailResponse response = resend.emails().send(params);
-            log.info("OTP email terkirim, id: {}", response.getId());
-        } catch (ResendException e) {
-            log.error("Gagal mengirim OTP via Resend: {}", e.getMessage());
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("Kode OTP FinanceBuddy");
+            helper.setText(buildEmailHtml(otp), true);
+            mailSender.send(message);
+            log.info("OTP email terkirim ke {}", toEmail);
+        } catch (Exception e) {
+            log.error("Gagal mengirim OTP: {}", e.getMessage());
         }
     }
 
