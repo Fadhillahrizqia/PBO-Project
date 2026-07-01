@@ -9,7 +9,7 @@
  */
 
 // 1. NAIKKAN VERSI CACHE (Wajib setiap ada perubahan file HTML/CSS/JS)
-const CACHE_VERSION = "v1.1.2";
+const CACHE_VERSION = "v1.1.3";
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
 
@@ -88,7 +88,13 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
 
   // ── 1. API Request → Network-First ──────────────────────────────────────
-  if (url.pathname.startsWith("/api/")) {
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname.includes("saldo") ||
+    url.pathname.includes("transaksi") ||
+    url.pathname.includes("dashboard") ||
+    url.pathname.includes("summary")
+  ) {
     event.respondWith(networkFirstStrategy(request, API_CACHE));
     return;
   }
@@ -144,7 +150,8 @@ async function networkFirstStrategy(request, cacheName) {
   const cache = await caches.open(cacheName);
 
   try {
-    const networkResponse = await fetch(request);
+    // Diperbarui dengan { cache: 'no-store' } untuk memotong HTTP Cache internal browser
+    const networkResponse = await fetch(request, { cache: "no-store" });
     if (networkResponse.ok) {
       cache.put(request, networkResponse.clone());
     }
