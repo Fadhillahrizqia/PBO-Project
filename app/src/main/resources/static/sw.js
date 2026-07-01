@@ -9,7 +9,7 @@
  */
 
 // 1. NAIKKAN VERSI CACHE (Wajib setiap ada perubahan file HTML/CSS/JS)
-const CACHE_VERSION = "v1.1.3";
+const CACHE_VERSION = "v1.1.4";
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 const API_CACHE = `api-${CACHE_VERSION}`;
 
